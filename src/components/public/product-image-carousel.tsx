@@ -59,20 +59,20 @@ export function ProductImageCarousel({
           <button
             type="button"
             onClick={handlePrevious}
-            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-all hover:scale-105 hover:bg-white"
+            className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-x-2 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-primary opacity-0 shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition-all duration-200 hover:bg-white hover:text-primary-hover focus-visible:translate-x-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 group-hover:translate-x-0 group-hover:opacity-100"
             aria-label={`Imagem anterior de ${productName}`}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" strokeWidth={2.25} />
           </button>
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-all hover:scale-105 hover:bg-white"
+            className="absolute right-1 top-1/2 z-10 flex h-9 w-9 translate-x-2 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-primary opacity-0 shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition-all duration-200 hover:bg-white hover:text-primary-hover focus-visible:translate-x-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 group-hover:translate-x-0 group-hover:opacity-100"
             aria-label={`Próxima imagem de ${productName}`}
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" strokeWidth={2.25} />
           </button>
-          <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/25 px-2 py-1 backdrop-blur-sm">
+          <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/20 px-2 py-1 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
             {validImages.map((image, imageIndex) => (
               <button
                 key={`${image}-${imageIndex}`}

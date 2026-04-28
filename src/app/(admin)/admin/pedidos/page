@@ -1,0 +1,148 @@
+import Link from "next/link"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { Search, ChevronRight } from "lucide-react"
+
+export const metadata = {
+  title: "Pedidos | Essência & Arte",
+}
+
+// Mock Data para listar os pedidos
+const MOCK_ORDERS = [
+  {
+    id: "ord_1",
+    code: "PED-883A",
+    customer: "Maria Eduarda",
+    product: "Caneta Personalizada",
+    total: 20.5,
+    status: "pending_payment",
+    date: "Hoje, 10:30",
+  },
+  {
+    id: "ord_2",
+    code: "PED-921B",
+    customer: "João Pedro",
+    product: "Chaveiro Patinha",
+    total: 18.0,
+    status: "confirmed",
+    date: "Hoje, 09:15",
+  },
+  {
+    id: "ord_3",
+    code: "PED-105C",
+    customer: "Ana Beatriz",
+    product: "Porta-alianças Coração",
+    total: 45.0,
+    status: "production",
+    date: "Ontem",
+  },
+  {
+    id: "ord_4",
+    code: "PED-044D",
+    customer: "Camila Silva",
+    product: "Lembrança Batizado (20x)",
+    total: 240.0,
+    status: "shipped",
+    date: "24/04/2026",
+  },
+  {
+    id: "ord_5",
+    code: "PED-998E",
+    customer: "Lucas Santos",
+    product: "Caneta Personalizada",
+    total: 22.0,
+    status: "delivered",
+    date: "20/04/2026",
+  },
+]
+
+export default function AdminOrdersPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-foreground">
+            Pedidos
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Gerencie todas as suas encomendas aqui.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-[--radius-xl] border border-border bg-card shadow-soft">
+        {/* Toolbar */}
+        <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar por código ou cliente..."
+              className="flex h-10 w-full rounded-[--radius-md] border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="flex gap-2">
+            <select className="h-10 rounded-[--radius-md] border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <option value="all">Todos os status</option>
+              <option value="pending_payment">Aguardando Pagamento</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="production">Em Produção</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Table/List */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/50 text-muted-foreground">
+              <tr>
+                <th className="px-6 py-4 font-medium">Código</th>
+                <th className="px-6 py-4 font-medium">Data</th>
+                <th className="px-6 py-4 font-medium">Cliente</th>
+                <th className="px-6 py-4 font-medium">Produto</th>
+                <th className="px-6 py-4 font-medium">Status</th>
+                <th className="px-6 py-4 text-right font-medium">Total</th>
+                <th className="px-6 py-4"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {MOCK_ORDERS.map((order) => (
+                <tr
+                  key={order.id}
+                  className="transition-colors hover:bg-muted/50"
+                >
+                  <td className="whitespace-nowrap px-6 py-4 font-medium text-foreground">
+                    {order.code}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">
+                    {order.date}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 font-medium text-foreground">
+                    {order.customer}
+                  </td>
+                  <td className="px-6 py-4 text-muted-foreground">
+                    {order.product}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <StatusBadge status={order.status as any} />
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right font-medium text-foreground">
+                    R$ {order.total.toFixed(2).replace(".", ",")}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right">
+                    <Link
+                      href={`/admin/pedidos/${order.id}`}
+                      className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="sr-only">Ver detalhes</span>
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}

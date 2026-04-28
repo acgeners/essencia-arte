@@ -1,0 +1,221 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==============================
+   ESSÊNCIA & ARTE — DESIGN TOKENS
+   Paleta alinhada com o logo rose gold / cobre
+   ============================== */
+
+:root {
+  /* Background & Foreground */
+  --background: #FBF7F4;
+  --foreground: #3B2820;
+
+  /* Card */
+  --card: #FFFFFF;
+  --card-foreground: #3B2820;
+
+  /* Popover */
+  --popover: #FFFFFF;
+  --popover-foreground: #3B2820;
+
+  /* Muted */
+  --muted: #F3EAE4;
+  --muted-foreground: #8C7268;
+
+  /* Borders & Inputs */
+  --border: #E8DDD6;
+  --input: #E8DDD6;
+  --ring: #B88A78;
+
+  /* Primary — Rose Gold (CTA buttons, links ativos) */
+  --primary: #B88A78;
+  --primary-hover: #A47462;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary — Rose gold pastel (botões secundários) */
+  --secondary: #F3EAE4;
+  --secondary-foreground: #3B2820;
+
+  /* Accent — Rose gold médio (destaques sutis) */
+  --accent: #D4AE9C;
+  --accent-foreground: #3B2820;
+
+  /* Semantic */
+  --success: #6B9080;
+  --success-foreground: #FFFFFF;
+  --warning: #D4A574;
+  --warning-foreground: #FFFFFF;
+  --destructive: #B85A5A;
+  --destructive-foreground: #FFFFFF;
+
+  /* Focus ring with alpha */
+  --ring-focus: rgba(184, 138, 120, 0.4);
+
+  /* Chart colors (rose gold palette) */
+  --chart-1: #B88A78;
+  --chart-2: #D4AE9C;
+  --chart-3: #D4A574;
+  --chart-4: #6B9080;
+  --chart-5: #8C7268;
+
+  /* Shadows — warm copper tones, never black */
+  --shadow-soft: 0 1px 2px rgba(59, 40, 32, 0.04), 0 4px 12px rgba(59, 40, 32, 0.06);
+  --shadow-card: 0 2px 4px rgba(59, 40, 32, 0.04), 0 12px 32px rgba(59, 40, 32, 0.08);
+  --shadow-elevated: 0 4px 8px rgba(59, 40, 32, 0.06), 0 20px 48px rgba(59, 40, 32, 0.12);
+
+  /* Border Radius */
+  --radius: 0.625rem;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease-out;
+  --transition-base: 200ms ease-out;
+  --transition-slow: 300ms ease-out;
+
+  /* Sidebar (admin) — rose gold theme */
+  --sidebar: #FEFBF9;
+  --sidebar-foreground: #3B2820;
+  --sidebar-primary: #B88A78;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F3EAE4;
+  --sidebar-accent-foreground: #3B2820;
+  --sidebar-border: #E8DDD6;
+  --sidebar-ring: #B88A78;
+}
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring-focus: var(--ring-focus);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Fonts */
+  --font-display: var(--font-cormorant);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-cormorant);
+
+  /* Shadows */
+  --shadow-soft: var(--shadow-soft);
+  --shadow-card: var(--shadow-card);
+  --shadow-elevated: var(--shadow-elevated);
+
+  /* Additional radius */
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ==============================
+   BASE STYLES
+   ============================== */
+
+/* Display/Title typography */
+.font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Smooth scrolling (when not reduced motion) */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--accent);
+  color: var(--foreground);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+  }
+  html {
+    @apply font-sans;
+  }
+}

@@ -110,7 +110,7 @@ export function PromoBanner() {
       onMouseLeave={() => setPaused(false)}
     >
       {/* Slides */}
-      <div className="relative h-[240px] sm:h-[290px] lg:h-[320px]">
+      <div className="relative h-[280px] sm:h-[330px] lg:h-[370px]">
         <AnimatePresence custom={dir} initial={false}>
           <motion.div
             key={slide.id}
@@ -135,7 +135,7 @@ export function PromoBanner() {
                 {/* Tag */}
                 <span
                   className={cn(
-                    "mb-4 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest",
+                    "mb-4 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest",
                     slide.tagBg
                   )}
                 >
@@ -144,7 +144,7 @@ export function PromoBanner() {
                 </span>
 
                 {/* Title */}
-                <h2 className="font-display text-3xl font-semibold leading-tight text-white sm:text-4xl lg:text-5xl">
+                <h2 className="font-display text-2xl font-semibold leading-tight text-white sm:text-3xl lg:text-4xl">
                   {slide.title}
                   <br />
                   <em className={cn("italic", slide.accentColor)}>
@@ -153,7 +153,7 @@ export function PromoBanner() {
                 </h2>
 
                 {/* Description */}
-                <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70 sm:text-base">
+                <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/70 sm:text-sm">
                   {slide.description}
                 </p>
 
@@ -162,7 +162,7 @@ export function PromoBanner() {
                   <Link
                     href={slide.cta.href}
                     className={cn(
-                      "inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold shadow-md transition-all active:scale-95",
+                      "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold shadow-md transition-all active:scale-95",
                       slide.ctaBg
                     )}
                   >
@@ -171,7 +171,7 @@ export function PromoBanner() {
                   </Link>
                   <span
                     className={cn(
-                      "hidden rounded-full px-3 py-1 text-xs font-medium sm:inline-block",
+                      "hidden rounded-full px-3 py-1 text-[11px] font-medium sm:inline-block",
                       slide.badgeStyle
                     )}
                   >
@@ -182,8 +182,8 @@ export function PromoBanner() {
 
               {/* Right — emoji decoration */}
               <div className="hidden select-none flex-col items-center justify-center sm:flex lg:mr-8">
-                <div className="relative flex h-36 w-36 items-center justify-center rounded-[2rem] bg-white/10 shadow-2xl backdrop-blur-sm lg:h-44 lg:w-44">
-                  <span className="text-7xl lg:text-8xl">{slide.emoji}</span>
+                <div className="relative flex h-32 w-32 items-center justify-center rounded-[2rem] bg-white/10 shadow-2xl backdrop-blur-sm lg:h-40 lg:w-40">
+                  <span className="text-6xl lg:text-7xl">{slide.emoji}</span>
                 </div>
               </div>
             </div>

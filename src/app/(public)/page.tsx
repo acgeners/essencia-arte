@@ -45,6 +45,7 @@ export default async function HomePage() {
 	                    <ProductImageCarousel
 	                      productId={product.id}
 	                      productName={product.name}
+	                      categorySlug={category.slug}
 	                      images={product.images}
 	                    />
                     <div className="mt-3 flex flex-col gap-1 px-0.5">

@@ -1,11 +1,10 @@
 import Link from "next/link"
-import Image from "next/image"
-import { Heart, ShoppingBag, ArrowRight, Shield, MessageCircle, Truck, Star } from "lucide-react"
+import { Heart, ArrowRight, Shield, MessageCircle, Truck, Star } from "lucide-react"
 import { getFullCatalog } from "@/server/queries/catalog"
 import { formatBRL } from "@/lib/format"
 import { PromoBanner } from "@/components/public/promo-banner"
-import { FavoriteButton } from "@/components/public/favorite-button"
 import { Testimonials } from "@/components/public/testimonials"
+import { ProductImageCarousel } from "@/components/public/product-image-carousel"
 
 export default async function HomePage() {
   const catalog = await getFullCatalog()
@@ -41,24 +40,13 @@ export default async function HomePage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
-                {category.products.map((product) => (
-                  <div key={product.id} className="group flex flex-col">
-                    <div className="relative aspect-square overflow-hidden rounded-[var(--radius-xl)] bg-muted">
-                      {product.images?.[0] ? (
-                        <Image
-                          src={product.images[0]}
-                          alt={product.name}
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <ShoppingBag className="h-16 w-16 text-muted-foreground/15" />
-                        </div>
-                      )}
-                      <FavoriteButton productId={product.id} className="absolute right-2.5 top-2.5" />
-                    </div>
+	                {category.products.map((product) => (
+	                  <div key={product.id} className="group flex flex-col">
+	                    <ProductImageCarousel
+	                      productId={product.id}
+	                      productName={product.name}
+	                      images={product.images}
+	                    />
                     <div className="mt-3 flex flex-col gap-1 px-0.5">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {category.name}

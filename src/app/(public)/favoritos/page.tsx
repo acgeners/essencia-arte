@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { Heart, Sparkles } from "lucide-react"
+import { Heart } from "lucide-react"
 import { getFullCatalog } from "@/server/queries/catalog"
 import { FavoritesGrid } from "./favorites-grid"
 

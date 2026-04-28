@@ -80,7 +80,7 @@ export function PromoBanner() {
   const [index, setIndex] = useState(0)
   const [dir, setDir] = useState(1)
   const [paused, setPaused] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout>>()
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const go = useCallback(
     (next: number, d: number) => {
@@ -96,10 +96,12 @@ export function PromoBanner() {
   useEffect(() => {
     if (paused) return
     timer.current = setTimeout(next, AUTOPLAY_MS)
-    return () => clearTimeout(timer.current)
+    return () => {
+      if (timer.current) clearTimeout(timer.current)
+    }
   }, [index, paused, next])
 
-  const slide = slides[index]
+  const slide = slides[index] ?? slides[0]!
 
   return (
     <div

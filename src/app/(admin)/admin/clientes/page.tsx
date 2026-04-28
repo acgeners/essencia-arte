@@ -26,7 +26,7 @@ export default async function AdminCustomersPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
-                  {customer.full_name[0].toUpperCase()}
+                  {customer.full_name.charAt(0).toUpperCase() || "?"}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">{customer.full_name}</h3>

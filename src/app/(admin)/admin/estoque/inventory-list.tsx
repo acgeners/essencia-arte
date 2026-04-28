@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { updateInventory } from "./actions"
 import { toast } from "sonner"
-import { Save, RefreshCcw } from "lucide-react"
+import { Save } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 type InventoryItem = {

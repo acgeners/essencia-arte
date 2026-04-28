@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, Heart, ShoppingBag, Search } from "lucide-react"
+import { Menu, X, ShoppingBag } from "lucide-react"
 
 const navLinks = [
   { label: "Início", href: "/" },

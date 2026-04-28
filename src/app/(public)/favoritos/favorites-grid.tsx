@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart, ShoppingBag, Sparkles } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Heart, ShoppingBag } from "lucide-react"
 import { formatBRL } from "@/lib/format"
 
 interface Product {

@@ -13,9 +13,17 @@ type Product = {
   base_price: number
   category_id: string | null
   images: string[] | null
-  categories: { id: string; name: string } | null
-  product_category_links: { category_id: string }[]
-  product_options: { option_id: string }[]
+  product_category_links: { category_id: string; categories: { id: string; name: string } | null }[]
+  product_options: { option_id: string; options: { id: string; type: string } | null }[]
+}
+
+const typeLabels: Record<string, string> = {
+  color: "Cores",
+  glitter: "Glitters",
+  tassel_color: "Tassels",
+  extra: "Adicionais",
+  packaging: "Embalagens",
+  shipping: "Entrega",
 }
 
 type Category = {
@@ -122,16 +130,34 @@ export function ProductsList({
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {product.categories?.name || "-"}
-                      {product.product_category_links.length > 1 && (
-                        <span className="text-xs text-muted-foreground">(+{product.product_category_links.length - 1})</span>
-                      )}
+                      {product.product_category_links.length === 0
+                        ? <span>-</span>
+                        : product.product_category_links.map((l) => (
+                          <span key={l.category_id} className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                            {l.categories?.name ?? l.category_id}
+                          </span>
+                        ))
+                      }
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                      {product.product_options.length} opções
-                    </span>
+                    {product.product_options.length === 0 ? (
+                      <span className="text-muted-foreground">-</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(
+                          product.product_options.reduce((acc, o) => {
+                            const type = o.options?.type ?? "outro"
+                            acc[type] = (acc[type] ?? 0) + 1
+                            return acc
+                          }, {} as Record<string, number>)
+                        ).map(([type, count]) => (
+                          <span key={type} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            {typeLabels[type] ?? type}: {count}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     {formatBRL(product.base_price)}

@@ -6,9 +6,8 @@ export async function getAdminProducts() {
     .from("products")
     .select(`
       *,
-      categories!product_category_links (id, name),
-      product_category_links (category_id),
-      product_options (option_id)
+      product_category_links (category_id, categories(id, name)),
+      product_options (option_id, options(id, type))
     `)
     .order("name")
 

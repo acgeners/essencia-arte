@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import type { CartView } from "@/stores/cart-store"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   X,
@@ -24,7 +25,7 @@ import { formatBRL } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
-type View = "items" | "checkout" | "payment"
+type View = CartView
 
 interface CustomerData {
   name: string
@@ -35,8 +36,7 @@ interface CustomerData {
 
 export function CartDrawer() {
   const router = useRouter()
-  const { items, isOpen, closeCart, removeItem, clearCart } = useCartStore()
-  const [view, setView] = useState<View>("items")
+  const { items, isOpen, view, setView, closeCart, removeItem, clearCart } = useCartStore()
   const [customerData, setCustomerData] = useState<CustomerData>({
     name: "",
     phone: "",

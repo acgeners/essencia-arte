@@ -5,6 +5,8 @@ import { persist, createJSONStorage } from "zustand/middleware"
 import type { WizardState } from "@/stores/wizard-store"
 import { generateIdempotencyKey } from "@/lib/utils"
 
+export type CartView = "items" | "checkout" | "payment"
+
 export interface CartItem {
   id: string
   wizardState: WizardState
@@ -17,6 +19,7 @@ export interface CartItem {
 interface CartState {
   items: CartItem[]
   isOpen: boolean
+  view: CartView
 }
 
 interface CartActions {
@@ -24,7 +27,9 @@ interface CartActions {
   removeItem: (id: string) => void
   clearCart: () => void
   openCart: () => void
+  openCartAt: (view: CartView) => void
   closeCart: () => void
+  setView: (view: CartView) => void
 }
 
 export const useCartStore = create<CartState & CartActions>()(
@@ -32,6 +37,7 @@ export const useCartStore = create<CartState & CartActions>()(
     (set) => ({
       items: [],
       isOpen: false,
+      view: "items",
 
       addItem: (item) =>
         set((s) => ({
@@ -43,12 +49,15 @@ export const useCartStore = create<CartState & CartActions>()(
 
       clearCart: () => set({ items: [] }),
 
-      openCart: () => set({ isOpen: true }),
+      openCart: () => set({ isOpen: true, view: "items" }),
+      openCartAt: (view) => set({ isOpen: true, view }),
       closeCart: () => set({ isOpen: false }),
+      setView: (view) => set({ view }),
     }),
     {
       name: "essencia-arte-cart",
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ items: state.items }),
     }
   )
 )

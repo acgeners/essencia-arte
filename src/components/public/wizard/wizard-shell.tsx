@@ -15,7 +15,7 @@ import { StepReview } from "@/components/public/wizard/step-review"
 import { calculatePrice } from "@/lib/pricing/calculate"
 import { estimateDeadlines } from "@/lib/pricing/deadlines"
 import type { FullCatalog } from "@/server/queries/catalog"
-import { ArrowLeft, ShoppingBag, ArrowRight } from "lucide-react"
+import { ArrowLeft, ShoppingBag, ArrowRight, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const STEPS = [
@@ -130,7 +130,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
   const ok = canProceed(state, step)
   const isPreparingEntry = !state.hasHydrated
 
-  function handleAddToCart() {
+  function addCurrentToCart() {
     const product = catalog.products.find((p) => p.id === state.productId)
     const category = catalog.categories.find((c) => c.slug === state.categorySlug)
     const displayName = product
@@ -145,7 +145,16 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
       depositAmount: pricing.deposit,
     })
     reset()
+  }
+
+  function handleAddToCart() {
+    addCurrentToCart()
     cartStore.openCart()
+  }
+
+  function handleBuyNow() {
+    addCurrentToCart()
+    cartStore.openCartAt("checkout")
   }
 
   function handleNext() {
@@ -179,7 +188,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
             </div>
 
             {/* Navigation */}
-            <div className="mt-6 flex items-center justify-between">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
                 onClick={prevStep}
@@ -187,7 +196,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
                 className={cn(
                   "flex items-center gap-2 rounded-[var(--radius-lg)] px-4 py-2.5 text-sm font-medium transition-colors",
                   isFirstStep
-                    ? "invisible"
+                    ? "invisible hidden sm:flex"
                     : "border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
@@ -195,29 +204,53 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
                 Voltar
               </button>
 
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={!ok}
-                className={cn(
-                  "flex items-center gap-2 rounded-[var(--radius-xl)] px-8 py-3 text-base font-semibold transition-all duration-200",
-                  ok
-                    ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/85 hover:shadow-lg active:scale-[0.98]"
-                    : "cursor-not-allowed bg-muted text-muted-foreground"
-                )}
-              >
-                {isLastStep ? (
-                  <>
+              {isLastStep ? (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    disabled={!ok}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-[var(--radius-xl)] border-2 px-6 py-3 text-base font-semibold transition-all",
+                      ok
+                        ? "border-primary bg-card text-primary hover:bg-primary/5 active:scale-[0.98]"
+                        : "cursor-not-allowed border-border bg-muted text-muted-foreground"
+                    )}
+                  >
                     <ShoppingBag className="h-5 w-5" />
                     Adicionar à sacola
-                  </>
-                ) : (
-                  <>
-                    Continuar
-                    <ArrowRight className="h-5 w-5" />
-                  </>
-                )}
-              </button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBuyNow}
+                    disabled={!ok}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-[var(--radius-xl)] px-8 py-3 text-base font-semibold transition-all",
+                      ok
+                        ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/85 hover:shadow-lg active:scale-[0.98]"
+                        : "cursor-not-allowed bg-muted text-muted-foreground"
+                    )}
+                  >
+                    <Zap className="h-5 w-5" />
+                    Comprar agora
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!ok}
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-[var(--radius-xl)] px-8 py-3 text-base font-semibold transition-all duration-200",
+                    ok
+                      ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/85 hover:shadow-lg active:scale-[0.98]"
+                      : "cursor-not-allowed bg-muted text-muted-foreground"
+                  )}
+                >
+                  Continuar
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+              )}
             </div>
 
             {/* Mobile: price summary below navigation */}

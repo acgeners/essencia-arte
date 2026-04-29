@@ -173,6 +173,7 @@ export const useWizardStore = create<WizardState & WizardActions>()(
           if (draft && draft.step >= 2) {
             return {
               ...draft,
+              step: Math.min(draft.step, 4),
               productDrafts,
               hasHydrated: s.hasHydrated,
             }
@@ -227,13 +228,31 @@ export const useWizardStore = create<WizardState & WizardActions>()(
     }),
     {
       name: "essencia-arte-wizard",
+      version: 2,
       storage: createJSONStorage(() => sessionStorage),
       partialize: ({ hasHydrated: _hasHydrated, ...state }) => {
         void _hasHydrated
         return state
       },
+      migrate: (_persisted, version) => {
+        if (version < 2) {
+          return {
+            ...initialState,
+            idempotencyKey: generateIdempotencyKey(),
+          } as WizardState & WizardActions
+        }
+        return _persisted as WizardState & WizardActions
+      },
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true)
+        if (state) {
+          state.step = Math.min(state.step ?? 0, 4)
+          const cleanDrafts: Record<string, WizardDraft> = {}
+          for (const [id, draft] of Object.entries(state.productDrafts ?? {})) {
+            cleanDrafts[id] = { ...draft, step: Math.min(draft.step, 4) }
+          }
+          state.productDrafts = cleanDrafts
+          state.setHasHydrated(true)
+        }
       },
     }
   )

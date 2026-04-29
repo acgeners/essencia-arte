@@ -123,7 +123,7 @@ export function OrderSummaryPanel({ pricing, deadlines }: OrderSummaryPanelProps
 
       {product ? (
         <div className="mt-4 rounded-[var(--radius-lg)] border border-border bg-muted/25 p-3">
-          <div className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-md)] bg-background">
+          <div className="relative mx-auto aspect-square w-[85%] overflow-hidden rounded-[var(--radius-md)] bg-background">
             {productImage ? (
               <img
                 src={productImage}

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { createProduct, updateProduct, createCategory } from "./actions"
 import { toast } from "sonner"
-import { X, Plus, ChevronDown, ChevronRight } from "lucide-react"
+import { X, Plus, ChevronDown, ChevronRight, ChevronLeft, Star } from "lucide-react"
 
 type Product = {
   id: string
@@ -15,16 +15,12 @@ type Product = {
   product_options: { option_id: string }[]
 }
 
-type Category = {
-  id: string
-  name: string
-}
+type Category = { id: string; name: string }
+type Option = { id: string; name: string; type: string }
 
-type Option = {
-  id: string
-  name: string
-  type: string
-}
+type Preview =
+  | { src: string; isExisting: true }
+  | { src: string; isExisting: false; file: File }
 
 const DELIVERY_TYPES = new Set(["shipping", "packaging"])
 
@@ -41,12 +37,19 @@ function OptionsGroup({
   label,
   options,
   selectedIds,
+  onToggle,
+  onToggleAll,
 }: {
   label: string
   options: Option[]
   selectedIds: Set<string>
+  onToggle: (id: string) => void
+  onToggleAll: (ids: string[], select: boolean) => void
 }) {
   const [expanded, setExpanded] = useState(true)
+  const allSelected = options.every((o) => selectedIds.has(o.id))
+  const ids = options.map((o) => o.id)
+
   return (
     <div className="border border-input rounded-md overflow-hidden">
       <button
@@ -58,22 +61,35 @@ function OptionsGroup({
         {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
       </button>
       {expanded && (
-        <div className="grid grid-cols-1 gap-0.5 p-2">
-          {options.map((o) => (
-            <label
-              key={o.id}
-              className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/60 px-2 py-1.5 rounded"
-            >
-              <input
-                type="checkbox"
-                name="optionIds"
-                value={o.id}
-                defaultChecked={selectedIds.has(o.id)}
-                className="rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              {o.name}
-            </label>
-          ))}
+        <div className="max-h-40 overflow-y-auto">
+          {/* Selecionar todos */}
+          <label className="flex items-center gap-2 text-xs font-medium cursor-pointer px-3 py-1.5 border-b border-input bg-muted/20 hover:bg-muted/40 text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={() => onToggleAll(ids, !allSelected)}
+              className="rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            Selecionar todos
+          </label>
+          <div className="grid grid-cols-1 gap-0.5 p-2">
+            {options.map((o) => (
+              <label
+                key={o.id}
+                className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/60 px-2 py-1.5 rounded"
+              >
+                <input
+                  type="checkbox"
+                  name="optionIds"
+                  value={o.id}
+                  checked={selectedIds.has(o.id)}
+                  onChange={() => onToggle(o.id)}
+                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                {o.name}
+              </label>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -92,44 +108,49 @@ export function ProductForm({
   onClose: () => void
 }) {
   const [isLoading, setIsLoading] = useState(false)
-  const [previews, setPreviews] = useState<{ src: string; isExisting: boolean }[]>(
+  const [previews, setPreviews] = useState<Preview[]>(
     (product?.images ?? []).filter(Boolean).map((src) => ({ src, isExisting: true }))
   )
   const [localCategories, setLocalCategories] = useState<Category[]>(categories)
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     product?.product_category_links.map((l) => l.category_id) ?? []
   )
+  const [selectedOptionIds, setSelectedOptionIds] = useState<Set<string>>(
+    new Set(product?.product_options.map((l) => l.option_id) ?? [])
+  )
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [isAddingCategory, setIsAddingCategory] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const newFilesRef = useRef<File[]>([])
 
-  const selectedOptionIds = new Set(
-    product?.product_options.map((l) => l.option_id) ?? []
-  )
+  // ── Imagens ──────────────────────────────────────────────────────────────
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
-    newFilesRef.current = [...newFilesRef.current, ...files]
-    const newPreviews = files.map((f) => ({ src: URL.createObjectURL(f), isExisting: false }))
+    const newPreviews: Preview[] = files.map((file) => ({
+      src: URL.createObjectURL(file),
+      isExisting: false,
+      file,
+    }))
     setPreviews((prev) => [...prev, ...newPreviews])
-    // Reset input so same file can be re-added
     e.target.value = ""
   }
 
   function removePreview(index: number) {
+    setPreviews((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function movePreview(index: number, direction: -1 | 1) {
     setPreviews((prev) => {
-      const item = prev[index]
-      if (item && !item.isExisting) {
-        // Remove from new files too (match by position among non-existing)
-        const nonExistingBefore = prev.slice(0, index).filter((p) => !p.isExisting).length
-        newFilesRef.current = newFilesRef.current.filter((_, i) => i !== nonExistingBefore)
-      }
-      return prev.filter((_, i) => i !== index)
+      const next = [...prev]
+      const target = index + direction
+      if (target < 0 || target >= next.length) return prev
+      ;[next[index], next[target]] = [next[target]!, next[index]!]
+      return next
     })
   }
+
+  // ── Categorias ───────────────────────────────────────────────────────────
 
   function toggleCategory(id: string) {
     setSelectedCategoryIds((prev) =>
@@ -155,6 +176,26 @@ export function ProductForm({
     setIsAddingCategory(false)
   }
 
+  // ── Opções ───────────────────────────────────────────────────────────────
+
+  function toggleOption(id: string) {
+    setSelectedOptionIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleAllOptions(ids: string[], select: boolean) {
+    setSelectedOptionIds((prev) => {
+      const next = new Set(prev)
+      ids.forEach((id) => (select ? next.add(id) : next.delete(id)))
+      return next
+    })
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (selectedCategoryIds.length === 0) {
@@ -165,13 +206,17 @@ export function ProductForm({
 
     const formData = new FormData(e.currentTarget)
 
-    // Imagens existentes a manter
-    previews
-      .filter((p) => p.isExisting)
-      .forEach((p) => formData.append("existingImageUrls", p.src))
+    // Imagens na ordem atual: existentes → URLs, novas → Files
+    previews.forEach((p) => {
+      if (p.isExisting) {
+        formData.append("existingImageUrls", p.src)
+      } else {
+        formData.append("imageFiles", p.file)
+      }
+    })
 
-    // Novos arquivos
-    newFilesRef.current.forEach((f) => formData.append("imageFiles", f))
+    // Opções selecionadas (controlled — não vêm do form HTML)
+    selectedOptionIds.forEach((id) => formData.append("optionIds", id))
 
     selectedCategoryIds.forEach((id) => formData.append("categoryIds", id))
 
@@ -188,7 +233,8 @@ export function ProductForm({
     }
   }
 
-  // Separar opções comuns das opções de entrega
+  // ── Agrupamento de opções ─────────────────────────────────────────────────
+
   const commonOptions = options.filter((o) => !DELIVERY_TYPES.has(o.type))
   const deliveryOptions = options.filter((o) => DELIVERY_TYPES.has(o.type))
 
@@ -201,6 +247,8 @@ export function ProductForm({
 
   const commonGroups = groupByType(commonOptions)
   const deliveryGroups = groupByType(deliveryOptions)
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -242,7 +290,8 @@ export function ProductForm({
                   name="basePrice"
                   step="0.01"
                   min="0"
-                  defaultValue={product?.base_price}
+                  defaultValue={product?.base_price != null ? product.base_price.toFixed(2) : ""}
+                  placeholder="0,00"
                   required
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -252,9 +301,13 @@ export function ProductForm({
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Imagens do Produto
+                  {previews.length > 0 && (
+                    <span className="ml-2 text-xs text-muted-foreground font-normal">
+                      — primeira imagem é a capa
+                    </span>
+                  )}
                 </label>
 
-                {/* Grade de previews */}
                 {previews.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 mb-2">
                     {previews.map((p, i) => (
@@ -264,6 +317,31 @@ export function ProductForm({
                           alt={`Imagem ${i + 1}`}
                           className="h-24 w-full object-cover rounded-lg border border-input"
                         />
+                        {/* Indicador de capa */}
+                        {i === 0 && (
+                          <span className="absolute bottom-1 left-1 flex items-center gap-0.5 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded">
+                            <Star className="h-2.5 w-2.5" /> Capa
+                          </span>
+                        )}
+                        {/* Controles hover */}
+                        <div className="absolute inset-0 flex items-center justify-between px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => movePreview(i, -1)}
+                            disabled={i === 0}
+                            className="h-6 w-6 flex items-center justify-center rounded-full bg-black/60 text-white disabled:opacity-30"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => movePreview(i, 1)}
+                            disabled={i === previews.length - 1}
+                            className="h-6 w-6 flex items-center justify-center rounded-full bg-black/60 text-white disabled:opacity-30"
+                          >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={() => removePreview(i)}
@@ -276,10 +354,9 @@ export function ProductForm({
                   </div>
                 )}
 
-                {/* Botão de adicionar */}
                 <div
                   className="flex flex-col items-center justify-center w-full rounded-lg border-2 border-dashed border-input bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors py-4"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => document.getElementById("imageFileInput")?.click()}
                 >
                   <Plus className="h-6 w-6 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground mt-1">
@@ -288,7 +365,7 @@ export function ProductForm({
                   <span className="text-xs text-muted-foreground">JPG, PNG, WEBP</span>
                 </div>
                 <input
-                  ref={fileInputRef}
+                  id="imageFileInput"
                   type="file"
                   accept="image/*"
                   multiple
@@ -302,7 +379,7 @@ export function ProductForm({
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Categorias (Selecione 1 ou mais)
                 </label>
-                <div className="space-y-1 max-h-40 overflow-y-auto p-2 border border-input rounded-md">
+                <div className="space-y-1 max-h-40 overflow-y-auto p-4 border border-input rounded-md">
                   {localCategories.map((c) => (
                     <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
                       <input
@@ -365,13 +442,15 @@ export function ProductForm({
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Opções Disponíveis
                 </label>
-                <div className="space-y-2 max-h-72 overflow-y-auto">
+                <div className="space-y-2">
                   {Object.entries(commonGroups).map(([type, opts]) => (
                     <OptionsGroup
                       key={type}
                       label={typeLabels[type] ?? type}
                       options={opts}
                       selectedIds={selectedOptionIds}
+                      onToggle={toggleOption}
+                      onToggleAll={toggleAllOptions}
                     />
                   ))}
                 </div>
@@ -390,6 +469,8 @@ export function ProductForm({
                         label={typeLabels[type] ?? type}
                         options={opts}
                         selectedIds={selectedOptionIds}
+                        onToggle={toggleOption}
+                        onToggleAll={toggleAllOptions}
                       />
                     ))}
                   </div>

@@ -285,14 +285,17 @@ export function ProductForm({
                   Preço Base (R$)
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   id="basePrice"
                   name="basePrice"
-                  step="0.01"
-                  min="0"
                   defaultValue={product?.base_price != null ? product.base_price.toFixed(2) : ""}
                   placeholder="0,00"
                   required
+                  onBlur={(e) => {
+                    const val = parseFloat(e.target.value.replace(",", "."))
+                    if (!isNaN(val)) e.target.value = val.toFixed(2)
+                  }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>

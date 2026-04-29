@@ -42,6 +42,8 @@ export function ColorSwatch({
         sizeClasses[size],
         selected
           ? "border-primary ring-2 ring-primary/30 scale-110"
+          : isLight
+          ? "border-border hover:scale-105"
           : "border-transparent hover:border-border hover:scale-105",
         disabled && "cursor-not-allowed opacity-40"
       )}

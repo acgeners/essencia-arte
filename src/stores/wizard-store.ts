@@ -138,7 +138,7 @@ export const useWizardStore = create<WizardState & WizardActions>()(
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
       setStep: (step) => set({ step }),
-      nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 7) })),
+      nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 4) })),
       prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 0) })),
 
       startGeneric: () =>

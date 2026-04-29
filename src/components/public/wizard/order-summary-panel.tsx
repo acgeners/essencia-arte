@@ -122,8 +122,8 @@ export function OrderSummaryPanel({ pricing, deadlines }: OrderSummaryPanelProps
       </h3>
 
       {product ? (
-        <div className="mt-4 flex gap-3 rounded-[var(--radius-lg)] border border-border bg-muted/25 p-3">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] bg-background">
+        <div className="mt-4 rounded-[var(--radius-lg)] border border-border bg-muted/25 p-3">
+          <div className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-md)] bg-background">
             {productImage ? (
               <img
                 src={productImage}
@@ -131,10 +131,12 @@ export function OrderSummaryPanel({ pricing, deadlines }: OrderSummaryPanelProps
                 className="h-full w-full object-cover"
               />
             ) : (
-              <Package className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-full w-full items-center justify-center">
+                <Package className="h-10 w-10 text-muted-foreground" />
+              </div>
             )}
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="mt-3">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Produto
             </p>

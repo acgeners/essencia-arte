@@ -1,33 +1,27 @@
 "use client"
 
 import { useEffect, useLayoutEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
 import { useWizardStore } from "@/stores/wizard-store"
+import { useCartStore } from "@/stores/cart-store"
 import { CatalogProvider } from "@/components/public/wizard/catalog-context"
 import { Stepper } from "@/components/ui/stepper"
 import { OrderSummaryPanel } from "@/components/public/wizard/order-summary-panel"
 import { StepProduct } from "@/components/public/wizard/step-product"
 import { StepModel } from "@/components/public/wizard/step-model"
-import { StepColors } from "@/components/public/wizard/step-colors"
-import { StepGlitter } from "@/components/public/wizard/step-glitter"
-import { StepPersonalization } from "@/components/public/wizard/step-personalization"
-import { StepExtras } from "@/components/public/wizard/step-extras"
+import { StepCustomization } from "@/components/public/wizard/step-customization"
 import { StepDelivery } from "@/components/public/wizard/step-delivery"
 import { StepReview } from "@/components/public/wizard/step-review"
 import { calculatePrice } from "@/lib/pricing/calculate"
 import { estimateDeadlines } from "@/lib/pricing/deadlines"
 import type { FullCatalog } from "@/server/queries/catalog"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowLeft, ShoppingBag, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const STEPS = [
   { label: "Produto" },
   { label: "Modelo" },
-  { label: "Cores" },
-  { label: "Glitter" },
-  { label: "Nome" },
-  { label: "Adicionais" },
+  { label: "Personalização" },
   { label: "Entrega" },
   { label: "Resumo" },
 ]
@@ -35,10 +29,7 @@ const STEPS = [
 const STEP_COMPONENTS = [
   StepProduct,
   StepModel,
-  StepColors,
-  StepGlitter,
-  StepPersonalization,
-  StepExtras,
+  StepCustomization,
   StepDelivery,
   StepReview,
 ]
@@ -48,24 +39,21 @@ function canProceed(state: ReturnType<typeof useWizardStore.getState>, step: num
     case 0: return !!state.categorySlug
     case 1: return !!state.productId
     case 2: return !!state.colors.primaryId
-    case 3: return true
-    case 4: return true
-    case 5: return true
-    case 6:
+    case 3:
       if (!state.delivery.type) return false
       if (state.delivery.type === "correios") {
         return !!state.delivery.shippingOptionId && !!state.delivery.shippingQuote
       }
       return true
-    case 7: return true
+    case 4: return true
     default: return false
   }
 }
 
 export function WizardShell({ catalog }: { catalog: FullCatalog }) {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const state = useWizardStore()
+  const cartStore = useCartStore()
   const {
     step,
     nextStep,
@@ -74,6 +62,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
     startCategory,
     startProduct,
     setStep,
+    reset,
   } = state
   const requestedProductId = searchParams.get("product")
   const requestedCategorySlug = searchParams.get("category")
@@ -141,9 +130,27 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
   const ok = canProceed(state, step)
   const isPreparingEntry = !state.hasHydrated
 
+  function handleAddToCart() {
+    const product = catalog.products.find((p) => p.id === state.productId)
+    const category = catalog.categories.find((c) => c.slug === state.categorySlug)
+    const displayName = product
+      ? category ? `${category.name} – ${product.name}` : product.name
+      : "Produto personalizado"
+
+    cartStore.addItem({
+      wizardState: { ...state },
+      displayName,
+      categoryName: category?.name ?? "",
+      totalPrice: pricing.total,
+      depositAmount: pricing.deposit,
+    })
+    reset()
+    cartStore.openCart()
+  }
+
   function handleNext() {
     if (isLastStep) {
-      router.push("/pedido/confirmacao/preview")
+      handleAddToCart()
     } else {
       nextStep()
     }
@@ -159,7 +166,6 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
           </div>
         ) : (
           <>
-
         {/* Stepper */}
         <Stepper steps={STEPS} currentStep={step} className="mb-8" onStepClick={setStep} />
 
@@ -200,8 +206,17 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
                     : "cursor-not-allowed bg-muted text-muted-foreground"
                 )}
               >
-                {isLastStep ? "Finalizar pedido" : "Continuar"}
-                <ArrowRight className="h-5 w-5" />
+                {isLastStep ? (
+                  <>
+                    <ShoppingBag className="h-5 w-5" />
+                    Adicionar à sacola
+                  </>
+                ) : (
+                  <>
+                    Continuar
+                    <ArrowRight className="h-5 w-5" />
+                  </>
+                )}
               </button>
             </div>
 

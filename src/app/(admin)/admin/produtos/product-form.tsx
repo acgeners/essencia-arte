@@ -46,7 +46,7 @@ function OptionsGroup({
   onToggle: (id: string) => void
   onToggleAll: (ids: string[], select: boolean) => void
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const allSelected = options.every((o) => selectedIds.has(o.id))
   const ids = options.map((o) => o.id)
 

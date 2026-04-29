@@ -48,6 +48,7 @@ export async function createProduct(formData: FormData) {
       base_price: basePrice,
       category_id: categoryIds[0],
       images,
+      option_ids: optionIds,
     })
     .select()
     .single()
@@ -64,7 +65,7 @@ export async function createProduct(formData: FormData) {
   }))
   await supabase.from("product_category_links").insert(categoryLinks)
 
-  // 3. Criar vínculos de opções
+  // 3. Criar vínculos de opções (junction table)
   if (optionIds.length > 0) {
     const optionLinks = optionIds.map(optId => ({
       product_id: product.id,
@@ -108,6 +109,7 @@ export async function updateProduct(id: string, formData: FormData) {
       base_price: basePrice,
       category_id: categoryIds[0],
       images,
+      option_ids: optionIds,
     })
     .eq("id", id)
 

@@ -140,7 +140,7 @@ export function ProductsList({
                       }
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 max-w-[220px]">
                     {product.product_options.length === 0 ? (
                       <span className="text-muted-foreground">-</span>
                     ) : (

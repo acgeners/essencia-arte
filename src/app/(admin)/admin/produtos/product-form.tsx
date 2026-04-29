@@ -80,8 +80,6 @@ function OptionsGroup({
               >
                 <input
                   type="checkbox"
-                  name="optionIds"
-                  value={o.id}
                   checked={selectedIds.has(o.id)}
                   onChange={() => onToggle(o.id)}
                   className="rounded border-gray-300 text-primary focus:ring-primary"

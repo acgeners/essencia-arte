@@ -9,6 +9,8 @@ type Product = {
   id: string
   name: string
   base_price: number
+  production_days_min: number | null
+  production_days_max: number | null
   category_id: string | null
   images: string[] | null
   product_category_links: { category_id: string }[]
@@ -179,7 +181,11 @@ export function ProductForm({
   function toggleOption(id: string) {
     setSelectedOptionIds((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return next
     })
   }
@@ -296,6 +302,40 @@ export function ProductForm({
                   }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Prazo de produção
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="mb-1 block text-xs text-muted-foreground">Mínimo (dias úteis)</span>
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      id="productionDaysMin"
+                      name="productionDaysMin"
+                      defaultValue={product?.production_days_min ?? 3}
+                      required
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <span className="mb-1 block text-xs text-muted-foreground">Máximo (dias úteis)</span>
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      id="productionDaysMax"
+                      name="productionDaysMax"
+                      defaultValue={product?.production_days_max ?? 5}
+                      required
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Imagens */}

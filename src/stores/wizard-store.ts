@@ -33,6 +33,13 @@ export interface WizardState {
     type: "pickup" | "correios" | "transportadora" | null
     shippingOptionId: string | null
     cep: string
+    shippingQuote: {
+      optionId: string
+      name: string
+      price: number
+      minDays: number
+      maxDays: number
+    } | null
     address: {
       street: string
       number: string
@@ -52,6 +59,7 @@ interface WizardActions {
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
+  startGeneric: () => void
   startCategory: (slug: string) => void
   startProduct: (categorySlug: string, productId: string) => void
   setCategorySlug: (slug: string) => void
@@ -97,6 +105,7 @@ const initialState: WizardState = {
     type: null,
     shippingOptionId: null,
     cep: "",
+    shippingQuote: null,
     address: null,
   },
   idempotencyKey: generateIdempotencyKey(),
@@ -132,6 +141,17 @@ export const useWizardStore = create<WizardState & WizardActions>()(
       nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 7) })),
       prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 0) })),
 
+      startGeneric: () =>
+        set((s) => {
+          const productDrafts = saveCurrentDraft(s)
+          return {
+            ...initialState,
+            productDrafts,
+            hasHydrated: s.hasHydrated,
+            idempotencyKey: generateIdempotencyKey(),
+          }
+        }),
+
       startCategory: (slug) =>
         set((s) => {
           const productDrafts = saveCurrentDraft(s)
@@ -150,10 +170,9 @@ export const useWizardStore = create<WizardState & WizardActions>()(
           const productDrafts = saveCurrentDraft(s)
           const draft = productDrafts[productId]
 
-          if (draft && draft.step > 0) {
+          if (draft && draft.step >= 2) {
             return {
               ...draft,
-              step: Math.max(draft.step, 2),
               productDrafts,
               hasHydrated: s.hasHydrated,
             }

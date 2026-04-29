@@ -72,10 +72,17 @@ export function calculatePrice(state: WizardState, catalog: FullCatalog): PriceC
       (s) => s.id === state.delivery.shippingOptionId
     )
     if (ship) {
-      shippingFee = ship.price ?? 0
+      const quote =
+        state.delivery.shippingQuote?.optionId === ship.id
+          ? state.delivery.shippingQuote
+          : null
+      shippingFee =
+        state.delivery.type === "correios"
+          ? quote?.price ?? 0
+          : ship.price ?? 0
       breakdown.push({
         label: `Frete: ${ship.name}`,
-        value: ship.price ?? 0,
+        value: shippingFee,
       })
     }
   }

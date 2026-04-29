@@ -13,11 +13,42 @@ type CepResult = {
   state: string
 }
 
-function freightByUF(uf: string): { pac: number; sedex: number } {
-  if (uf === "SP") return { pac: 12.9, sedex: 24.9 }
-  if (["RJ", "MG", "ES", "PR", "SC", "RS"].includes(uf)) return { pac: 17.9, sedex: 32.9 }
-  if (["DF", "GO", "MT", "MS", "TO"].includes(uf)) return { pac: 21.9, sedex: 38.9 }
-  return { pac: 28.9, sedex: 49.9 }
+const ORIGIN_CEP = "13140735"
+
+function calculateCorreiosFreight(destinationCep: string, uf: string): {
+  pac: { price: number; minDays: number; maxDays: number }
+  sedex: { price: number; minDays: number; maxDays: number }
+} {
+  const originPrefix = Number(ORIGIN_CEP.slice(0, 5))
+  const destinationPrefix = Number(destinationCep.slice(0, 5))
+  const cepDistance = Number.isFinite(destinationPrefix)
+    ? Math.abs(destinationPrefix - originPrefix)
+    : 0
+  const interiorSurcharge = cepDistance > 25000 ? 6 : cepDistance > 12000 ? 3 : 0
+
+  if (uf === "SP") {
+    const local = cepDistance <= 2500
+    return {
+      pac: { price: local ? 12.9 : 15.9, minDays: local ? 2 : 3, maxDays: local ? 4 : 5 },
+      sedex: { price: local ? 24.9 : 28.9, minDays: 1, maxDays: local ? 2 : 3 },
+    }
+  }
+  if (["RJ", "MG", "ES", "PR", "SC", "RS"].includes(uf)) {
+    return {
+      pac: { price: 17.9 + interiorSurcharge, minDays: 5, maxDays: 8 },
+      sedex: { price: 32.9 + interiorSurcharge, minDays: 2, maxDays: 4 },
+    }
+  }
+  if (["DF", "GO", "MT", "MS", "TO"].includes(uf)) {
+    return {
+      pac: { price: 21.9 + interiorSurcharge, minDays: 6, maxDays: 9 },
+      sedex: { price: 38.9 + interiorSurcharge, minDays: 3, maxDays: 5 },
+    }
+  }
+  return {
+    pac: { price: 28.9 + interiorSurcharge, minDays: 7, maxDays: 12 },
+    sedex: { price: 49.9 + interiorSurcharge, minDays: 4, maxDays: 7 },
+  }
 }
 
 export function StepDelivery() {
@@ -54,6 +85,7 @@ export function StepDelivery() {
     setCepLoading(true)
     setCepError(null)
     setCepResult(null)
+    setDelivery({ shippingOptionId: null, shippingQuote: null })
     try {
       const res = await fetch(`https://viacep.com.br/ws/${rawCep}/json/`)
       const data = await res.json()
@@ -69,7 +101,23 @@ export function StepDelivery() {
         state: data.uf ?? "",
       }
       setCepResult(result)
+      const freight = calculateCorreiosFreight(rawCep, result.state)
+      const pacOption = correiosOptions.find((opt) => opt.name === "PAC")
+      const currentOption = stateSafeOption(stateSafeShippingOptionId())
+      const selectedOption = currentOption ?? pacOption ?? correiosOptions[0]
+      const selectedFreight =
+        selectedOption?.name === "SEDEX" ? freight.sedex : freight.pac
       setDelivery({
+        shippingOptionId: selectedOption?.id ?? null,
+        shippingQuote: selectedOption
+          ? {
+              optionId: selectedOption.id,
+              name: selectedOption.name,
+              price: selectedFreight.price,
+              minDays: selectedFreight.minDays,
+              maxDays: selectedFreight.maxDays,
+            }
+          : null,
         address: {
           street: result.street,
           number: delivery.address?.number ?? "",
@@ -81,7 +129,7 @@ export function StepDelivery() {
       })
     } catch {
       setCepError("Erro ao buscar CEP. Verifique sua conexao.")
-      setDelivery({ address: null })
+      setDelivery({ address: null, shippingQuote: null })
     } finally {
       setCepLoading(false)
     }
@@ -93,6 +141,7 @@ export function StepDelivery() {
     setCepError(null)
     if (digits.length < 8) {
       setCepResult(null)
+      setDelivery({ shippingOptionId: null, shippingQuote: null })
       if (debounceRef.current) clearTimeout(debounceRef.current)
       return
     }
@@ -111,6 +160,37 @@ export function StepDelivery() {
     return digits.slice(0, 5) + "-" + digits.slice(5)
   }
 
+  function stateSafeShippingOptionId() {
+    return delivery.shippingOptionId
+  }
+
+  function stateSafeOption(optionId: string | null) {
+    if (!optionId) return null
+    return correiosOptions.find((opt) => opt.id === optionId) ?? null
+  }
+
+  function selectCorreiosOption(optionId: string) {
+    const option = correiosOptions.find((opt) => opt.id === optionId)
+    if (!option || !cepResult || delivery.cep.length !== 8) return
+    const freight = calculateCorreiosFreight(delivery.cep, cepResult.state)
+    const quote = freight
+      ? option.name === "SEDEX" ? freight.sedex : freight.pac
+      : null
+
+    setDelivery({
+      shippingOptionId: option.id,
+      shippingQuote: quote
+        ? {
+            optionId: option.id,
+            name: option.name,
+            price: quote.price,
+            minDays: quote.minDays,
+            maxDays: quote.maxDays,
+          }
+        : null,
+    })
+  }
+
   return (
     <div>
       <h2 className="font-display text-2xl font-semibold text-foreground">Entrega</h2>
@@ -123,11 +203,11 @@ export function StepDelivery() {
             type="button"
             onClick={() => {
               if (dt.type === "pickup") {
-                setDelivery({ type: "pickup", shippingOptionId: pickupOption?.id ?? null })
+                setDelivery({ type: "pickup", shippingOptionId: pickupOption?.id ?? null, shippingQuote: null })
               } else if (dt.type === "transportadora") {
-                setDelivery({ type: "transportadora", shippingOptionId: transportadoraOption?.id ?? null })
+                setDelivery({ type: "transportadora", shippingOptionId: transportadoraOption?.id ?? null, shippingQuote: null })
               } else {
-                setDelivery({ type: "correios", shippingOptionId: null })
+                setDelivery({ type: "correios", shippingOptionId: null, shippingQuote: null })
               }
             }}
             className={cn(
@@ -191,39 +271,48 @@ export function StepDelivery() {
                 {[cepResult.street, cepResult.district].filter(Boolean).join(", ")}
               </p>
             )}
+            {!cepResult && !cepLoading && !cepError && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Informe o CEP para calcular o frete
+              </p>
+            )}
           </div>
 
           {correiosOptions.length > 0 && (
             <div className="space-y-3">
               <p className="text-sm font-medium text-foreground">Modalidade</p>
               {correiosOptions.map((opt) => {
-                const freight = cepResult ? freightByUF(cepResult.state) : null
-                const dynamicPrice = freight
-                  ? opt.name === "PAC" ? freight.pac : freight.sedex
-                  : (opt.price ?? 0)
+                const freight =
+                  cepResult && delivery.cep.length === 8
+                    ? calculateCorreiosFreight(delivery.cep, cepResult.state)
+                    : null
+                const dynamicQuote = freight
+                  ? opt.name === "SEDEX" ? freight.sedex : freight.pac
+                  : null
                 return (
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => setDelivery({ shippingOptionId: opt.id })}
+                    onClick={() => selectCorreiosOption(opt.id)}
+                    disabled={!dynamicQuote}
                     className={cn(
                       "flex w-full items-center justify-between rounded-[var(--radius-lg)] border-2 px-5 py-4 transition-all duration-200",
                       delivery.shippingOptionId === opt.id
                         ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/30"
+                        : "border-border hover:border-primary/30",
+                      !dynamicQuote && "cursor-not-allowed opacity-60 hover:border-border"
                     )}
                   >
                     <div>
                       <p className="text-sm font-medium text-foreground">{opt.name}</p>
-                      {opt.name === "PAC" && (
-                        <p className="text-xs text-muted-foreground">Prazo estimado: 5-8 dias uteis</p>
-                      )}
-                      {opt.name === "SEDEX" && (
-                        <p className="text-xs text-muted-foreground">Prazo estimado: 1-3 dias uteis</p>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {dynamicQuote
+                          ? `Prazo estimado: ${dynamicQuote.minDays}-${dynamicQuote.maxDays} dias uteis`
+                          : "Digite o CEP para calcular prazo e valor"}
+                      </p>
                     </div>
                     <span className="text-sm font-semibold text-primary">
-                      R$ {dynamicPrice.toFixed(2).replace(".", ",")}
+                      {dynamicQuote ? `R$ ${dynamicQuote.price.toFixed(2).replace(".", ",")}` : "Calcular"}
                     </span>
                   </button>
                 )

@@ -11,6 +11,8 @@ type Product = {
   id: string
   name: string
   base_price: number
+  production_days_min: number | null
+  production_days_max: number | null
   category_id: string | null
   images: string[] | null
   product_category_links: { category_id: string; categories: { id: string; name: string } | null }[]
@@ -119,6 +121,7 @@ export function ProductsList({
                 <th className="px-6 py-4 font-semibold">Categoria</th>
                 <th className="px-6 py-4 font-semibold">Opções</th>
                 <th className="px-6 py-4 font-semibold">Preço Base</th>
+                <th className="px-6 py-4 font-semibold">Produção</th>
                 <th className="px-6 py-4 font-semibold text-right">Ações</th>
               </tr>
             </thead>
@@ -162,6 +165,9 @@ export function ProductsList({
                   <td className="px-6 py-4">
                     {formatBRL(product.base_price)}
                   </td>
+                  <td className="px-6 py-4">
+                    {product.production_days_min ?? 3} a {product.production_days_max ?? 5} dias úteis
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button
@@ -185,7 +191,7 @@ export function ProductsList({
               ))}
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center">
+                  <td colSpan={6} className="px-6 py-8 text-center">
                     Nenhum produto encontrado.
                   </td>
                 </tr>

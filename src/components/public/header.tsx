@@ -11,10 +11,25 @@ import {
   Heart,
   ChevronDown,
   ArrowRight,
+  ShieldCheck,
+  Clock,
+  Lock,
+  MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart-store"
 import { createClient } from "@/lib/supabase/client"
+import { formatBRL } from "@/lib/format"
+
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5511999999999"
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Vim pelo site e gostaria de tirar uma dúvida.")}`
+
+const TRUST_BADGES = [
+  { icon: ShieldCheck, label: "Peça com", strong: "segurança" },
+  { icon: Clock, label: "Acompanhamento", strong: "em tempo real" },
+  { icon: Lock, label: "Pagamento", strong: "seguro" },
+  { icon: MessageCircle, label: "Atendimento", strong: "pelo WhatsApp" },
+]
 
 const EMOJI: Record<string, string> = {
   canetas: "✒️",
@@ -44,6 +59,7 @@ export function Header({ categories }: { categories: NavCategory[] }) {
   const [firstName, setFirstName] = useState<string | null>(null)
   const { items, openCart } = useCartStore()
   const cartCount = items.length
+  const cartTotal = items.reduce((sum, i) => sum + i.totalPrice, 0)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -122,15 +138,20 @@ export function Header({ categories }: { categories: NavCategory[] }) {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/minha-conta"
-              className="hidden flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted md:flex text-muted-foreground hover:text-foreground"
-              title="Minha Conta"
+              className={cn(
+                "hidden h-10 items-center justify-center gap-2 rounded-full transition-colors hover:bg-muted md:flex text-muted-foreground hover:text-foreground",
+                firstName ? "px-3" : "w-10"
+              )}
+              title={firstName ? `Olá, ${firstName}` : "Minha Conta"}
             >
               <User className="h-5 w-5" />
               {firstName && (
-                <span className="text-[10px] font-medium leading-none">{firstName}</span>
+                <span className="max-w-24 truncate text-sm font-medium text-foreground">
+                  {firstName}
+                </span>
               )}
             </Link>
             <Link
@@ -140,19 +161,57 @@ export function Header({ categories }: { categories: NavCategory[] }) {
             >
               <Heart className="h-5 w-5" />
             </Link>
+
+            {/* Fale conosco pelo WhatsApp */}
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-left text-xs leading-tight transition-all hover:border-primary/40 hover:bg-primary/5 md:flex"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#1da851]">
+                <MessageCircle className="h-4 w-4" />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-[10px] text-muted-foreground">Fale conosco</span>
+                <span className="font-semibold text-foreground">pelo WhatsApp</span>
+              </span>
+            </a>
+
+            {/* Meu pedido pill */}
             <button
               type="button"
               onClick={openCart}
-              className="group relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-muted"
+              className="group relative flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-left transition-all hover:border-primary/40 hover:bg-primary/5"
               title="Minha Sacola"
             >
-              <ShoppingBag className="h-5 w-5 text-muted-foreground group-hover:text-foreground" />
-              {cartCount > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                  {cartCount > 9 ? "9+" : cartCount}
-                </span>
-              )}
+              <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <ShoppingBag className="h-4 w-4 text-primary" />
+                {cartCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {cartCount > 9 ? "9+" : cartCount}
+                  </span>
+                )}
+              </span>
+              <span className="hidden flex-col text-xs leading-tight sm:flex">
+                <span className="text-[10px] text-muted-foreground">Meu pedido</span>
+                <span className="font-semibold text-foreground">{formatBRL(cartTotal)}</span>
+              </span>
             </button>
+          </div>
+        </div>
+
+        {/* Trust badges row — desktop */}
+        <div className="hidden border-t border-border/60 bg-muted/30 md:block">
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-8 px-4 py-2 sm:px-6 lg:gap-12 lg:px-8">
+            {TRUST_BADGES.map((b) => (
+              <div key={b.strong} className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <b.icon className="h-3.5 w-3.5 text-primary" />
+                <span>
+                  {b.label} <span className="font-semibold text-foreground">{b.strong}</span>
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 

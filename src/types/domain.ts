@@ -24,6 +24,8 @@ export interface Product {
   slug: string
   description: string | null
   basePrice: number
+  productionDaysMin: number
+  productionDaysMax: number
   active: boolean
   displayOrder: number
   category?: Category

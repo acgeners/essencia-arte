@@ -387,6 +387,8 @@ export type Database = {
           images: string[] | null
           name: string
           option_ids: string[] | null
+          production_days_max: number
+          production_days_min: number
         }
         Insert: {
           base_price: number
@@ -396,6 +398,8 @@ export type Database = {
           images?: string[] | null
           name: string
           option_ids?: string[] | null
+          production_days_max?: number
+          production_days_min?: number
         }
         Update: {
           base_price?: number
@@ -405,6 +409,8 @@ export type Database = {
           images?: string[] | null
           name?: string
           option_ids?: string[] | null
+          production_days_max?: number
+          production_days_min?: number
         }
         Relationships: [
           {

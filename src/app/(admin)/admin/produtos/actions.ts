@@ -21,13 +21,23 @@ async function uploadProductImage(file: File): Promise<string | null> {
 
 export async function createProduct(formData: FormData) {
   const name = formData.get("name") as string
-  const basePrice = parseFloat(formData.get("basePrice") as string)
+  const basePrice = parseFloat(String(formData.get("basePrice") ?? "").replace(",", "."))
+  const productionDaysMin = parseInt(String(formData.get("productionDaysMin") ?? "3"), 10)
+  const productionDaysMax = parseInt(String(formData.get("productionDaysMax") ?? "5"), 10)
   const categoryIds = formData.getAll("categoryIds") as string[]
   const optionIds = formData.getAll("optionIds") as string[]
   const imageFiles = formData.getAll("imageFiles") as File[]
 
-  if (!name || isNaN(basePrice) || categoryIds.length === 0) {
-    return { success: false, error: "Preencha o nome, preço e ao menos uma categoria." }
+  if (
+    !name ||
+    isNaN(basePrice) ||
+    isNaN(productionDaysMin) ||
+    isNaN(productionDaysMax) ||
+    productionDaysMin <= 0 ||
+    productionDaysMax < productionDaysMin ||
+    categoryIds.length === 0
+  ) {
+    return { success: false, error: "Preencha nome, preço, prazo válido e ao menos uma categoria." }
   }
 
   const images: string[] = []
@@ -46,6 +56,8 @@ export async function createProduct(formData: FormData) {
     .insert({
       name,
       base_price: basePrice,
+      production_days_min: productionDaysMin,
+      production_days_max: productionDaysMax,
       category_id: categoryIds[0],
       images,
       option_ids: optionIds,
@@ -81,14 +93,24 @@ export async function createProduct(formData: FormData) {
 
 export async function updateProduct(id: string, formData: FormData) {
   const name = formData.get("name") as string
-  const basePrice = parseFloat(formData.get("basePrice") as string)
+  const basePrice = parseFloat(String(formData.get("basePrice") ?? "").replace(",", "."))
+  const productionDaysMin = parseInt(String(formData.get("productionDaysMin") ?? "3"), 10)
+  const productionDaysMax = parseInt(String(formData.get("productionDaysMax") ?? "5"), 10)
   const categoryIds = formData.getAll("categoryIds") as string[]
   const optionIds = formData.getAll("optionIds") as string[]
   const imageFiles = formData.getAll("imageFiles") as File[]
   const existingImageUrls = (formData.getAll("existingImageUrls") as string[]).filter(Boolean)
 
-  if (!name || isNaN(basePrice) || categoryIds.length === 0) {
-    return { success: false, error: "Preencha os campos obrigatórios." }
+  if (
+    !name ||
+    isNaN(basePrice) ||
+    isNaN(productionDaysMin) ||
+    isNaN(productionDaysMax) ||
+    productionDaysMin <= 0 ||
+    productionDaysMax < productionDaysMin ||
+    categoryIds.length === 0
+  ) {
+    return { success: false, error: "Preencha nome, preço, prazo válido e ao menos uma categoria." }
   }
 
   const images: string[] = [...existingImageUrls]
@@ -107,6 +129,8 @@ export async function updateProduct(id: string, formData: FormData) {
     .update({
       name,
       base_price: basePrice,
+      production_days_min: productionDaysMin,
+      production_days_max: productionDaysMax,
       category_id: categoryIds[0],
       images,
       option_ids: optionIds,

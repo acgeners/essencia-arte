@@ -27,6 +27,9 @@ import {
   Truck,
   MessageCircle,
   Plus,
+  Upload,
+  QrCode,
+  Banknote,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart-store"
@@ -48,6 +51,9 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [pixCopied, setPixCopied] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "transfer">("pix")
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null)
 
   // Resolve names from IDs
   const modelName =
@@ -106,6 +112,7 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
       return
     }
 
+    setConfirmedOrderId(res.orderId ?? null)
     setIsSubmitted(true)
   }
 
@@ -185,89 +192,53 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
     )
   }
 
-  // Success screen
+  // Success screen — Pedido confirmado #
   if (isSubmitted) {
+    const shortOrderNumber = confirmedOrderId
+      ? `#${confirmedOrderId.toString().slice(0, 5).toUpperCase()}`
+      : "#—"
+
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 sm:py-16">
         <div className="rounded-[var(--radius-xl)] border border-border bg-card p-8 text-center shadow-card sm:p-12">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-            <Check className="h-8 w-8 text-success" />
+          <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+            <Check className="h-10 w-10 text-success" />
+            <Heart className="absolute -right-1 -top-1 h-5 w-5 fill-primary text-primary" />
           </div>
           <h1 className="mt-6 font-display text-3xl font-semibold text-foreground">
-            Pedido enviado!
+            Pedido confirmado!
           </h1>
-          <p className="mt-3 text-muted-foreground">
-            Seu pedido foi registrado com sucesso. Em breve entraremos em
-            contato pelo WhatsApp para confirmar os detalhes.
+          <p className="mt-2 text-sm text-muted-foreground">
+            Seu pedido só será confirmado após a baixa do pagamento.
           </p>
+
+          <div className="mt-6 inline-flex flex-col items-center rounded-[var(--radius-lg)] border border-dashed border-primary/40 bg-primary/5 px-6 py-3">
+            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              Número do pedido
+            </span>
+            <span className="font-display text-2xl font-bold text-primary">{shortOrderNumber}</span>
+          </div>
 
           <Separator className="my-8" />
 
-          {/* Payment instructions */}
-          <div className="rounded-[var(--radius-lg)] bg-primary/5 p-6 text-left">
-            <h3 className="text-sm font-semibold text-foreground">
-              📱 Próximo passo: pague a entrada via Pix
-            </h3>
-
-            <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-              {/* QR Code */}
-              <div className="flex shrink-0 flex-col items-center gap-2">
-                <div className="rounded-[var(--radius-lg)] border border-border bg-white p-3 shadow-soft">
-                  <QRCode
-                    value={pixPayload}
-                    size={160}
-                    level="M"
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground">Escaneie com seu app bancário</p>
-              </div>
-
-              {/* Key + amount details */}
-              <div className="flex-1 space-y-3 self-center">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Valor da entrada (50%)</span>
-                  <span className="text-xl font-bold text-primary">{formatBRL(pricing.deposit)}</span>
-                </div>
-                <Separator />
-                <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Ou copie a chave Pix
-                  </p>
-                  <div className="flex items-center justify-between rounded-[var(--radius-md)] bg-card px-3 py-2.5 border border-border">
-                    <code className="text-sm font-medium text-foreground break-all">
-                      {pixKey}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={handleCopyPix}
-                      className="ml-2 shrink-0 rounded-[var(--radius-sm)] p-1 text-muted-foreground hover:text-foreground"
-                      title="Copiar chave Pix"
-                    >
-                      {pixCopied ? (
-                        <Check className="h-4 w-4 text-success" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                  {pixCopied && (
-                    <p className="mt-1 text-xs text-success">Chave copiada!</p>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Após o pagamento, envie o comprovante pelo WhatsApp abaixo.
-                </p>
-              </div>
-            </div>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => router.push("/pedido/acompanhar")}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-hover sm:w-auto sm:px-8"
+            >
+              Acompanhar meu pedido
+            </button>
+            <p className="text-xs text-muted-foreground">
+              Você receberá atualizações por WhatsApp e aqui no sistema.
+            </p>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
             <button
               type="button"
               onClick={handleWhatsApp}
-              className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-[#25D366] px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#1da851]"
+              className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-[#25D366] px-5 py-2 text-xs font-semibold text-white transition-all hover:bg-[#1da851]"
             >
               <MessageCircle className="h-4 w-4" />
               Enviar comprovante pelo WhatsApp
@@ -278,15 +249,15 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
                 store.reset()
                 router.push("/")
               }}
-              className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-muted"
+              className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-border px-5 py-2 text-xs font-medium text-foreground transition-all hover:bg-muted"
             >
               Voltar à loja
             </button>
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">
-            Cada detalhe, feito com amor{" "}
-            <Heart className="inline h-3 w-3 text-primary" />
+            Essência & Arte — Transformamos ideias em lembranças únicas.{" "}
+            <Heart className="inline h-3 w-3 fill-primary text-primary" />
           </p>
         </div>
       </div>
@@ -442,6 +413,113 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
                   className="flex w-full rounded-[var(--radius-md)] border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Forma de pagamento */}
+          <div className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Banknote className="h-5 w-5 text-primary" />
+              Forma de pagamento
+            </h2>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("pix")}
+                className={cn(
+                  "flex items-center gap-2 rounded-[var(--radius-lg)] border-2 px-4 py-3 transition-all",
+                  paymentMethod === "pix"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/30"
+                )}
+              >
+                <QrCode className={cn("h-5 w-5", paymentMethod === "pix" ? "text-primary" : "text-muted-foreground")} />
+                <span className="text-sm font-semibold text-foreground">Pix</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("transfer")}
+                className={cn(
+                  "flex items-center gap-2 rounded-[var(--radius-lg)] border-2 px-4 py-3 transition-all",
+                  paymentMethod === "transfer"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/30"
+                )}
+              >
+                <Banknote className={cn("h-5 w-5", paymentMethod === "transfer" ? "text-primary" : "text-muted-foreground")} />
+                <span className="text-sm font-semibold text-foreground">Transferência</span>
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-[var(--radius-lg)] bg-primary/5 p-4">
+              {paymentMethod === "pix" ? (
+                <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                  <div className="flex shrink-0 flex-col items-center gap-1">
+                    <div className="rounded-[var(--radius-md)] border border-border bg-white p-2">
+                      <QRCode value={pixPayload} size={120} level="M" bgColor="#ffffff" fgColor="#000000" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Escaneie no app bancário</p>
+                  </div>
+                  <div className="flex-1 space-y-2 self-center">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Entrada (50%)</span>
+                      <span className="text-lg font-bold text-primary">{formatBRL(pricing.deposit)}</span>
+                    </div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Chave Pix</p>
+                    <div className="flex items-center justify-between rounded-[var(--radius-md)] bg-card px-3 py-2 border border-border">
+                      <code className="text-xs font-medium text-foreground break-all">{pixKey}</code>
+                      <button
+                        type="button"
+                        onClick={handleCopyPix}
+                        className="ml-2 shrink-0 rounded-[var(--radius-sm)] p-1 text-muted-foreground hover:text-foreground"
+                        title="Copiar"
+                      >
+                        {pixCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Entrada (50%)</span>
+                    <span className="text-lg font-bold text-primary">{formatBRL(pricing.deposit)}</span>
+                  </div>
+                  <Separator />
+                  <p className="text-xs text-muted-foreground">Dados para transferência:</p>
+                  <ul className="space-y-1 text-xs text-foreground">
+                    <li><span className="text-muted-foreground">Banco:</span> a definir</li>
+                    <li><span className="text-muted-foreground">Agência:</span> 0001</li>
+                    <li><span className="text-muted-foreground">Conta:</span> 12345-6</li>
+                    <li><span className="text-muted-foreground">Titular:</span> Essência & Arte</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Upload comprovante */}
+            <div className="mt-4">
+              <label
+                htmlFor="proof"
+                className={cn(
+                  "flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-dashed px-4 py-3 text-sm font-medium transition-all",
+                  proofFile ? "border-success bg-success/5 text-success" : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/40"
+                )}
+              >
+                <Upload className="h-4 w-4" />
+                {proofFile ? proofFile.name : "Enviar comprovante (após pagamento)"}
+                <input
+                  id="proof"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+              <p className="mt-1.5 text-[10px] text-muted-foreground">
+                Após o pagamento, envie o comprovante. PDF ou imagem.
+              </p>
             </div>
           </div>
 

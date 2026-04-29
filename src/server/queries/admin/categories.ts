@@ -4,7 +4,7 @@ export async function getAdminCategoriesList() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("categories")
-    .select("*, products(id)")
+    .select("*, products!products_category_id_fkey(id)")
     .order("name")
 
   if (error) throw error

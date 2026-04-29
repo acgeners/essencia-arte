@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   X,
@@ -33,6 +34,7 @@ interface CustomerData {
 }
 
 export function CartDrawer() {
+  const router = useRouter()
   const { items, isOpen, closeCart, removeItem, clearCart } = useCartStore()
   const [view, setView] = useState<View>("items")
   const [customerData, setCustomerData] = useState<CustomerData>({
@@ -136,6 +138,11 @@ export function CartDrawer() {
     closeCart()
   }
 
+  function handleCustomize() {
+    closeCart()
+    router.push("/pedido/novo")
+  }
+
   const viewTitle: Record<View, string> = {
     items: "Minha Sacola",
     checkout: "Fechar Pedido",
@@ -207,6 +214,7 @@ export function CartDrawer() {
                   onRemove={removeItem}
                   onCheckout={() => setView("checkout")}
                   onClose={closeCart}
+                  onCustomize={handleCustomize}
                 />
               )}
               {view === "checkout" && (
@@ -250,6 +258,7 @@ function ItemsView({
   onRemove,
   onCheckout,
   onClose,
+  onCustomize,
 }: {
   items: CartItem[]
   totalPrice: number
@@ -257,6 +266,7 @@ function ItemsView({
   onRemove: (id: string) => void
   onCheckout: () => void
   onClose: () => void
+  onCustomize: () => void
 }) {
   if (items.length === 0) {
     return (
@@ -274,7 +284,7 @@ function ItemsView({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={onCustomize}
           className="mt-2 inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary-hover"
         >
           Personalizar agora

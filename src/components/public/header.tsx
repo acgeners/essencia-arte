@@ -49,12 +49,16 @@ export function Header({ categories }: { categories: NavCategory[] }) {
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
-      const fullName = data.user?.user_metadata?.full_name as string | undefined
-      setFirstName(fullName?.split(" ")[0] ?? null)
+      const u = data.user
+      if (!u) return
+      const fullName = u.user_metadata?.full_name as string | undefined
+      setFirstName(fullName?.split(" ")[0] ?? u.email?.split("@")[0] ?? null)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      const fullName = session?.user?.user_metadata?.full_name as string | undefined
-      setFirstName(fullName?.split(" ")[0] ?? null)
+      const u = session?.user
+      if (!u) { setFirstName(null); return }
+      const fullName = u.user_metadata?.full_name as string | undefined
+      setFirstName(fullName?.split(" ")[0] ?? u.email?.split("@")[0] ?? null)
     })
     return () => subscription.unsubscribe()
   }, [])

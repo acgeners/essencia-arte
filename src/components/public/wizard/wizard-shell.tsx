@@ -1,6 +1,8 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useWizardStore } from "@/stores/wizard-store"
 import { CatalogProvider } from "@/components/public/wizard/catalog-context"
 import { Stepper } from "@/components/ui/stepper"
@@ -12,6 +14,7 @@ import { StepGlitter } from "@/components/public/wizard/step-glitter"
 import { StepPersonalization } from "@/components/public/wizard/step-personalization"
 import { StepExtras } from "@/components/public/wizard/step-extras"
 import { StepDelivery } from "@/components/public/wizard/step-delivery"
+import { StepReview } from "@/components/public/wizard/step-review"
 import { calculatePrice } from "@/lib/pricing/calculate"
 import type { FullCatalog } from "@/server/queries/catalog"
 import { ArrowLeft, ArrowRight } from "lucide-react"
@@ -25,6 +28,7 @@ const STEPS = [
   { label: "Nome" },
   { label: "Adicionais" },
   { label: "Entrega" },
+  { label: "Resumo" },
 ]
 
 const STEP_COMPONENTS = [
@@ -35,6 +39,7 @@ const STEP_COMPONENTS = [
   StepPersonalization,
   StepExtras,
   StepDelivery,
+  StepReview,
 ]
 
 function canProceed(state: ReturnType<typeof useWizardStore.getState>, step: number): boolean {
@@ -49,20 +54,76 @@ function canProceed(state: ReturnType<typeof useWizardStore.getState>, step: num
       if (!state.delivery.type) return false
       if (state.delivery.type === "correios") return !!state.delivery.shippingOptionId
       return true
+    case 7: return true
     default: return false
   }
 }
 
 export function WizardShell({ catalog }: { catalog: FullCatalog }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const state = useWizardStore()
-  const { step, nextStep, prevStep, setStep } = state
+  const {
+    step,
+    nextStep,
+    prevStep,
+    startCategory,
+    startProduct,
+    setStep,
+  } = state
+  const requestedProductId = searchParams.get("product")
+  const requestedCategorySlug = searchParams.get("category")
+  const requestedProduct = requestedProductId
+    ? catalog.products.find((item) => item.id === requestedProductId)
+    : null
+  const requestedCategory = requestedCategorySlug
+    ? catalog.categories.find((item) => item.slug === requestedCategorySlug)
+    : null
+
+  useEffect(() => {
+    if (!state.hasHydrated) return
+
+    if (requestedProduct) {
+      const isCurrentProduct = state.productId === requestedProduct.id && state.step > 0
+      if (isCurrentProduct) {
+        if (state.step < 2) setStep(2)
+        return
+      }
+
+      startProduct(requestedProduct.categorySlug, requestedProduct.id)
+      return
+    }
+
+    if (requestedCategory) {
+      const isCurrentCategoryOnly =
+        state.categorySlug === requestedCategory.slug && !state.productId && state.step === 1
+      if (isCurrentCategoryOnly) return
+
+      startCategory(requestedCategory.slug)
+    }
+  }, [
+    requestedCategory,
+    requestedProduct,
+    setStep,
+    startCategory,
+    startProduct,
+    state.categorySlug,
+    state.hasHydrated,
+    state.productId,
+    state.step,
+  ])
 
   const pricing = calculatePrice(state, catalog)
   const StepComponent = STEP_COMPONENTS[step]
   const isLastStep = step === STEPS.length - 1
   const isFirstStep = step === 0
   const ok = canProceed(state, step)
+  const isPreparingEntry =
+    !state.hasHydrated ||
+    (requestedProduct && (state.productId !== requestedProduct.id || state.step < 2)) ||
+    (!requestedProduct &&
+      requestedCategory &&
+      (state.categorySlug !== requestedCategory.slug || state.productId !== null || state.step < 1))
 
   function handleNext() {
     if (isLastStep) {
@@ -75,6 +136,13 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
   return (
     <CatalogProvider catalog={catalog}>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {isPreparingEntry ? (
+          <div className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
+            <div className="h-8 w-56 animate-pulse rounded-[var(--radius-md)] bg-muted" />
+            <div className="mt-4 h-40 animate-pulse rounded-[var(--radius-lg)] bg-muted" />
+          </div>
+        ) : (
+          <>
 
         {/* Stepper */}
         <Stepper steps={STEPS} currentStep={step} className="mb-8" onStepClick={setStep} />
@@ -122,19 +190,25 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
             </div>
 
             {/* Mobile: price summary below navigation */}
-            <div className="mt-6 lg:hidden">
-              <OrderSummaryPanel pricing={pricing} />
-            </div>
+            {!isLastStep && (
+              <div className="mt-6 lg:hidden">
+                <OrderSummaryPanel pricing={pricing} />
+              </div>
+            )}
           </div>
 
           {/* Desktop: sticky sidebar */}
-          <div className="hidden w-80 shrink-0 lg:block">
-            <div className="sticky top-24">
-              <OrderSummaryPanel pricing={pricing} />
+          {!isLastStep && (
+            <div className="hidden w-80 shrink-0 lg:block">
+              <div className="sticky top-24">
+                <OrderSummaryPanel pricing={pricing} />
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
+          </>
+        )}
       </div>
     </CatalogProvider>
   )

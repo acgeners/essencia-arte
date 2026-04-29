@@ -14,7 +14,7 @@ export function calculatePrice(state: WizardState, catalog: FullCatalog): PriceC
   const breakdown: Array<{ label: string; value: number }> = []
 
   // 1. Preço base do modelo
-  const model = catalog.products.find((m) => m.id === state.modelId)
+  const model = catalog.products.find((m) => m.id === state.productId)
   const basePrice = model?.basePrice ?? 0
   if (model) {
     breakdown.push({ label: `${model.name}`, value: basePrice })
@@ -95,4 +95,3 @@ export function calculatePrice(state: WizardState, catalog: FullCatalog): PriceC
     breakdown,
   }
 }
-

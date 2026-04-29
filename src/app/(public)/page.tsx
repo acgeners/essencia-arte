@@ -59,7 +59,7 @@ export default async function HomePage() {
                         {formatBRL(product.basePrice)}
                       </p>
                       <Link
-                        href="/pedido/novo"
+                        href={`/pedido/novo?category=${category.slug}&product=${product.id}`}
                         className="mt-2 flex h-9 items-center justify-center rounded-full bg-primary text-xs font-bold uppercase tracking-widest text-primary-foreground transition-all hover:bg-primary/90"
                       >
                         Personalizar

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -36,6 +37,31 @@ const sidebarItems = [
   { label: "Integrações", href: "/admin/integracoes", icon: Plug },
 ]
 
+function AdminGreeting() {
+  const [name, setName] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user
+      if (!u) return
+      const fullName = u.user_metadata?.full_name as string | undefined
+      setName(fullName?.split(" ")[0] ?? u.email?.split("@")[0] ?? null)
+    })
+  }, [])
+
+  if (!name) return null
+
+  return (
+    <div className="min-w-0 flex-1">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        Olá,
+      </p>
+      <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+    </div>
+  )
+}
+
 export function AdminSidebar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
@@ -48,8 +74,8 @@ export function AdminSidebar() {
   const NavContent = () => (
     <>
       {/* Logo */}
-      <div className="flex items-center border-b border-sidebar-border px-4 py-3">
-        <Link href="/admin" className="flex items-center gap-2">
+      <div className="flex items-center gap-3 border-b border-sidebar-border px-4 py-3">
+        <Link href="/admin" className="flex shrink-0 items-center gap-2">
           <img
             src="/logo.png"
             alt="Essência & Arte"
@@ -63,6 +89,7 @@ export function AdminSidebar() {
             Essência <span className="text-primary">&</span> Arte
           </span>
         </Link>
+        <AdminGreeting />
       </div>
 
       {/* Subtitle */}
@@ -102,7 +129,7 @@ export function AdminSidebar() {
           <Store className="h-4 w-4 shrink-0" />
           Ir para loja
         </Link>
-        <form action="/api/auth/logout" method="POST">
+        <form action="/logout" method="POST">
           <button
             type="submit"
             className="flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"

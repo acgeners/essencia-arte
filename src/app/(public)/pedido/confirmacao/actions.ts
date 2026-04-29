@@ -23,7 +23,7 @@ export async function createOrderAction(
     // 1. Validar e Recalcular Preço no Servidor
     const pricing = calculatePrice(state, catalog)
 
-    if (!state.modelId) {
+    if (!state.productId) {
       throw new Error("Produto não selecionado")
     }
 
@@ -68,7 +68,7 @@ export async function createOrderAction(
     const supabase = await createClient()
 
     // 3. Chamar a RPC para criar o pedido e descontar estoque
-    const payload: any = {
+    const payload = {
       p_customer_name: customerData.name,
       p_customer_phone: customerData.phone,
       p_customer_email: customerData.email || null,
@@ -78,7 +78,7 @@ export async function createOrderAction(
       p_total: pricing.total,
       p_deposit: pricing.deposit,
       p_balance: pricing.balance,
-      p_product_id: state.modelId,
+      p_product_id: state.productId,
       p_personalization_name: state.personalization.enabled ? state.personalization.name : null,
       p_primary_color_id: state.colors.primaryId || null,
       p_secondary_color_id: state.colors.secondaryEnabled ? state.colors.secondaryId : null,
@@ -91,7 +91,7 @@ export async function createOrderAction(
       p_customer_id: customerId // Novo parâmetro vinculado
     }
 
-    const { data, error } = await supabase.rpc("create_order_with_stock_check", payload)
+    const { data, error } = await supabase.rpc("create_order_with_stock_check", payload as never)
 
     if (error) {
       console.error("RPC Error:", error)
@@ -102,8 +102,11 @@ export async function createOrderAction(
     }
 
     return { success: true, orderId: data }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Action Error:", err)
-    return { success: false, error: err.message || "Erro desconhecido ao processar o pedido." }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro desconhecido ao processar o pedido.",
+    }
   }
 }

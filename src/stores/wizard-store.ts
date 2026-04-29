@@ -43,12 +43,17 @@ export interface WizardState {
     } | null
   }
   idempotencyKey: string
+  productDrafts: Record<string, WizardDraft>
+  hasHydrated: boolean
 }
 
 interface WizardActions {
+  setHasHydrated: (hasHydrated: boolean) => void
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
+  startCategory: (slug: string) => void
+  startProduct: (categorySlug: string, productId: string) => void
   setCategorySlug: (slug: string) => void
   setProductId: (id: string) => void
   setModelId: (id: string) => void
@@ -60,6 +65,8 @@ interface WizardActions {
   setDelivery: (data: Partial<WizardState["delivery"]>) => void
   reset: () => void
 }
+
+type WizardDraft = Omit<WizardState, "productDrafts" | "hasHydrated">
 
 const initialState: WizardState = {
   step: 0,
@@ -93,6 +100,25 @@ const initialState: WizardState = {
     address: null,
   },
   idempotencyKey: generateIdempotencyKey(),
+  productDrafts: {},
+  hasHydrated: false,
+}
+
+function saveCurrentDraft(state: WizardState): Record<string, WizardDraft> {
+  const currentDrafts = state.productDrafts ?? {}
+  if (!state.productId || state.step <= 0) return currentDrafts
+
+  const {
+    productDrafts: _productDrafts,
+    hasHydrated: _hasHydrated,
+    ...draft
+  } = state
+  void _productDrafts
+  void _hasHydrated
+  return {
+    ...currentDrafts,
+    [state.productId]: draft,
+  }
 }
 
 export const useWizardStore = create<WizardState & WizardActions>()(
@@ -100,9 +126,49 @@ export const useWizardStore = create<WizardState & WizardActions>()(
     (set) => ({
       ...initialState,
 
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
+
       setStep: (step) => set({ step }),
       nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 7) })),
       prevStep: () => set((s) => ({ step: Math.max(s.step - 1, 0) })),
+
+      startCategory: (slug) =>
+        set((s) => {
+          const productDrafts = saveCurrentDraft(s)
+          return {
+            ...initialState,
+            productDrafts,
+            hasHydrated: s.hasHydrated,
+            idempotencyKey: generateIdempotencyKey(),
+            categorySlug: slug,
+            step: 1,
+          }
+        }),
+
+      startProduct: (categorySlug, productId) =>
+        set((s) => {
+          const productDrafts = saveCurrentDraft(s)
+          const draft = productDrafts[productId]
+
+          if (draft && draft.step > 0) {
+            return {
+              ...draft,
+              step: Math.max(draft.step, 2),
+              productDrafts,
+              hasHydrated: s.hasHydrated,
+            }
+          }
+
+          return {
+            ...initialState,
+            productDrafts,
+            hasHydrated: s.hasHydrated,
+            idempotencyKey: generateIdempotencyKey(),
+            categorySlug,
+            productId,
+            step: 2,
+          }
+        }),
 
       setCategorySlug: (slug) =>
         set({ categorySlug: slug, productId: null, modelId: null }),
@@ -133,11 +199,23 @@ export const useWizardStore = create<WizardState & WizardActions>()(
       setDelivery: (data) =>
         set((s) => ({ delivery: { ...s.delivery, ...data } })),
 
-      reset: () => set({ ...initialState, idempotencyKey: generateIdempotencyKey() }),
+      reset: () =>
+        set((s) => ({
+          ...initialState,
+          hasHydrated: s.hasHydrated,
+          idempotencyKey: generateIdempotencyKey(),
+        })),
     }),
     {
       name: "essencia-arte-wizard",
       storage: createJSONStorage(() => sessionStorage),
+      partialize: ({ hasHydrated: _hasHydrated, ...state }) => {
+        void _hasHydrated
+        return state
+      },
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      },
     }
   )
 )

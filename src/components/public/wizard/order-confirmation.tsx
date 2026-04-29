@@ -51,7 +51,7 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
 
   // Resolve names from IDs
   const modelName =
-    catalog.products.find((m) => m.id === store.modelId)?.name ?? "—"
+    catalog.products.find((m) => m.id === store.productId)?.name ?? "—"
   const primaryColor =
     catalog.colors.find((c) => c.id === store.colors.primaryId)?.name ?? "—"
   const secondaryColor = store.colors.secondaryEnabled
@@ -132,7 +132,7 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
 
   function handleAddToCart() {
     const modelName =
-      catalog.products.find((m) => m.id === store.modelId)?.name ?? "Produto"
+      catalog.products.find((m) => m.id === store.productId)?.name ?? "Produto"
     const catName =
       catalog.categories.find((c) => c.slug === store.categorySlug)?.name ?? ""
     const displayName = catName ? `${catName} – ${modelName}` : modelName
@@ -165,7 +165,7 @@ export function OrderConfirmation({ catalog }: { catalog: FullCatalog }) {
   }
 
   // Redirect if wizard is empty
-  if (!store.modelId) {
+  if (!store.productId) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h2 className="font-display text-2xl font-semibold text-foreground">

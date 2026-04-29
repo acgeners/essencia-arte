@@ -31,13 +31,8 @@ export function ProductImageCarousel({
   const wizardStore = useWizardStore()
 
   function handleImageClick() {
-    const isResuming = wizardStore.productId === productId && wizardStore.step > 0
-    if (!isResuming) {
-      wizardStore.reset()
-      wizardStore.setCategorySlug(categorySlug)
-      wizardStore.setProductId(productId)
-    }
-    router.push("/pedido/novo")
+    wizardStore.startProduct(categorySlug, productId)
+    router.push(`/pedido/novo?category=${categorySlug}&product=${productId}`)
   }
 
   function handlePrevious(event: React.MouseEvent<HTMLButtonElement>) {

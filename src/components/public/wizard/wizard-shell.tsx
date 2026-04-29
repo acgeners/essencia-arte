@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useLayoutEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
 import { useWizardStore } from "@/stores/wizard-store"
@@ -16,6 +16,7 @@ import { StepExtras } from "@/components/public/wizard/step-extras"
 import { StepDelivery } from "@/components/public/wizard/step-delivery"
 import { StepReview } from "@/components/public/wizard/step-review"
 import { calculatePrice } from "@/lib/pricing/calculate"
+import { estimateDeadlines } from "@/lib/pricing/deadlines"
 import type { FullCatalog } from "@/server/queries/catalog"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -52,7 +53,9 @@ function canProceed(state: ReturnType<typeof useWizardStore.getState>, step: num
     case 5: return true
     case 6:
       if (!state.delivery.type) return false
-      if (state.delivery.type === "correios") return !!state.delivery.shippingOptionId
+      if (state.delivery.type === "correios") {
+        return !!state.delivery.shippingOptionId && !!state.delivery.shippingQuote
+      }
       return true
     case 7: return true
     default: return false
@@ -67,12 +70,14 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
     step,
     nextStep,
     prevStep,
+    startGeneric,
     startCategory,
     startProduct,
     setStep,
   } = state
   const requestedProductId = searchParams.get("product")
   const requestedCategorySlug = searchParams.get("category")
+  const isGenericEntry = !requestedProductId && !requestedCategorySlug
   const requestedProduct = requestedProductId
     ? catalog.products.find((item) => item.id === requestedProductId)
     : null
@@ -81,15 +86,14 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
     : null
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+  }, [requestedProductId, requestedCategorySlug])
+
+  useLayoutEffect(() => {
     if (!state.hasHydrated) return
 
     if (requestedProduct) {
-      const isCurrentProduct = state.productId === requestedProduct.id && state.step > 0
-      if (isCurrentProduct) {
-        if (state.step < 2) setStep(2)
-        return
-      }
-
+      if (state.productId === requestedProduct.id && state.step >= 2) return
       startProduct(requestedProduct.categorySlug, requestedProduct.id)
       return
     }
@@ -100,11 +104,23 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
       if (isCurrentCategoryOnly) return
 
       startCategory(requestedCategory.slug)
+      return
+    }
+
+    if (isGenericEntry) {
+      const isAlreadyGenericStart =
+        state.step === 0 &&
+        state.categorySlug === null &&
+        state.productId === null
+      if (!isAlreadyGenericStart) {
+        startGeneric()
+      }
     }
   }, [
+    isGenericEntry,
     requestedCategory,
     requestedProduct,
-    setStep,
+    startGeneric,
     startCategory,
     startProduct,
     state.categorySlug,
@@ -114,16 +130,16 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
   ])
 
   const pricing = calculatePrice(state, catalog)
+  const deadlines = estimateDeadlines(state, catalog)
+  const summaryDeadlines = {
+    productionLabel: deadlines.productionLabel,
+    deliveryLabel: deadlines.deliveryLabel,
+  }
   const StepComponent = STEP_COMPONENTS[step]
   const isLastStep = step === STEPS.length - 1
   const isFirstStep = step === 0
   const ok = canProceed(state, step)
-  const isPreparingEntry =
-    !state.hasHydrated ||
-    (requestedProduct && (state.productId !== requestedProduct.id || state.step < 2)) ||
-    (!requestedProduct &&
-      requestedCategory &&
-      (state.categorySlug !== requestedCategory.slug || state.productId !== null || state.step < 1))
+  const isPreparingEntry = !state.hasHydrated
 
   function handleNext() {
     if (isLastStep) {
@@ -192,7 +208,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
             {/* Mobile: price summary below navigation */}
             {!isLastStep && (
               <div className="mt-6 lg:hidden">
-                <OrderSummaryPanel pricing={pricing} />
+                <OrderSummaryPanel pricing={pricing} deadlines={summaryDeadlines} />
               </div>
             )}
           </div>
@@ -201,7 +217,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
           {!isLastStep && (
             <div className="hidden w-80 shrink-0 lg:block">
               <div className="sticky top-24">
-                <OrderSummaryPanel pricing={pricing} />
+                <OrderSummaryPanel pricing={pricing} deadlines={summaryDeadlines} />
               </div>
             </div>
           )}

@@ -45,7 +45,6 @@ export default async function HomePage() {
 	                    <ProductImageCarousel
 	                      productId={product.id}
 	                      productName={product.name}
-	                      categorySlug={category.slug}
 	                      images={product.images}
 	                    />
                     <div className="mt-3 flex flex-col gap-1 px-0.5">
@@ -58,12 +57,20 @@ export default async function HomePage() {
                       <p className="text-base font-bold text-foreground">
                         {formatBRL(product.basePrice)}
                       </p>
-                      <Link
-                        href={`/pedido/novo?category=${category.slug}&product=${product.id}`}
-                        className="mt-2 flex h-9 items-center justify-center rounded-full bg-primary text-xs font-bold uppercase tracking-widest text-primary-foreground transition-all hover:bg-primary/90"
-                      >
-                        Personalizar
-                      </Link>
+                      <div className="mt-2 flex flex-col gap-2">
+                        <Link
+                          href={`/produto/${product.id}`}
+                          className="flex h-9 items-center justify-center rounded-full border border-foreground bg-white text-xs font-bold uppercase tracking-widest text-foreground transition-all hover:bg-foreground hover:text-white"
+                        >
+                          Ver produto
+                        </Link>
+                        <Link
+                          href={`/pedido/novo?category=${category.slug}&product=${product.id}`}
+                          className="flex h-9 items-center justify-center rounded-full bg-primary text-xs font-bold uppercase tracking-widest text-primary-foreground transition-all hover:bg-primary/90"
+                        >
+                          Personalizar
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}

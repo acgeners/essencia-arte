@@ -6,19 +6,16 @@ import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FavoriteButton } from "@/components/public/favorite-button"
-import { useWizardStore } from "@/stores/wizard-store"
 
 interface ProductImageCarouselProps {
   productId: string
   productName: string
-  categorySlug: string
   images: string[] | null
 }
 
 export function ProductImageCarousel({
   productId,
   productName,
-  categorySlug,
   images,
 }: ProductImageCarouselProps) {
   const validImages = images?.filter(Boolean) ?? []
@@ -28,11 +25,9 @@ export function ProductImageCarousel({
   const hasMultipleImages = validImages.length > 1
 
   const router = useRouter()
-  const wizardStore = useWizardStore()
 
   function handleImageClick() {
-    wizardStore.startProduct(categorySlug, productId)
-    router.push(`/pedido/novo?category=${categorySlug}&product=${productId}`)
+    router.push(`/produto/${productId}`)
   }
 
   function handlePrevious(event: React.MouseEvent<HTMLButtonElement>) {
@@ -55,7 +50,7 @@ export function ProductImageCarousel({
           type="button"
           onClick={handleImageClick}
           className="absolute inset-0 z-0 h-full w-full"
-          aria-label={`Personalizar ${productName}`}
+          aria-label={`Ver detalhes de ${productName}`}
         >
           {validImages.length > 0 ? (
             validImages.map((src, i) => (

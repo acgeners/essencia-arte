@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_addresses: {
+        Row: {
+          id: string
+          customer_id: string
+          label: string | null
+          zip_code: string
+          street: string
+          number: string
+          complement: string | null
+          district: string
+          city: string
+          state: string
+          is_default: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          customer_id: string
+          label?: string | null
+          zip_code: string
+          street: string
+          number: string
+          complement?: string | null
+          district: string
+          city: string
+          state: string
+          is_default?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          customer_id?: string
+          label?: string | null
+          zip_code?: string
+          street?: string
+          number?: string
+          complement?: string | null
+          district?: string
+          city?: string
+          state?: string
+          is_default?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_addresses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -387,6 +443,8 @@ export type Database = {
           images: string[] | null
           name: string
           option_ids: string[] | null
+          production_days_max: number
+          production_days_min: number
         }
         Insert: {
           base_price: number
@@ -396,6 +454,8 @@ export type Database = {
           images?: string[] | null
           name: string
           option_ids?: string[] | null
+          production_days_max?: number
+          production_days_min?: number
         }
         Update: {
           base_price?: number
@@ -405,6 +465,8 @@ export type Database = {
           images?: string[] | null
           name?: string
           option_ids?: string[] | null
+          production_days_max?: number
+          production_days_min?: number
         }
         Relationships: [
           {

@@ -24,16 +24,18 @@ export async function createProduct(formData: FormData) {
   const basePrice = parseFloat(formData.get("basePrice") as string)
   const categoryIds = formData.getAll("categoryIds") as string[]
   const optionIds = formData.getAll("optionIds") as string[]
-  const imageFile = formData.get("imageFile") as File | null
+  const imageFiles = formData.getAll("imageFiles") as File[]
 
   if (!name || isNaN(basePrice) || categoryIds.length === 0) {
     return { success: false, error: "Preencha o nome, preço e ao menos uma categoria." }
   }
 
-  let images: string[] = []
-  if (imageFile && imageFile.size > 0) {
-    const url = await uploadProductImage(imageFile)
-    if (url) images = [url]
+  const images: string[] = []
+  for (const file of imageFiles) {
+    if (file && file.size > 0) {
+      const url = await uploadProductImage(file)
+      if (url) images.push(url)
+    }
   }
 
   const supabase = await createClient()
@@ -81,17 +83,19 @@ export async function updateProduct(id: string, formData: FormData) {
   const basePrice = parseFloat(formData.get("basePrice") as string)
   const categoryIds = formData.getAll("categoryIds") as string[]
   const optionIds = formData.getAll("optionIds") as string[]
-  const imageFile = formData.get("imageFile") as File | null
-  const existingImageUrl = formData.get("existingImageUrl") as string
+  const imageFiles = formData.getAll("imageFiles") as File[]
+  const existingImageUrls = (formData.getAll("existingImageUrls") as string[]).filter(Boolean)
 
   if (!name || isNaN(basePrice) || categoryIds.length === 0) {
     return { success: false, error: "Preencha os campos obrigatórios." }
   }
 
-  let images: string[] = existingImageUrl ? [existingImageUrl] : []
-  if (imageFile && imageFile.size > 0) {
-    const url = await uploadProductImage(imageFile)
-    if (url) images = [url]
+  const images: string[] = [...existingImageUrls]
+  for (const file of imageFiles) {
+    if (file && file.size > 0) {
+      const url = await uploadProductImage(file)
+      if (url) images.push(url)
+    }
   }
 
   const supabase = await createClient()

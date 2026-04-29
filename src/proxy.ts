@@ -1,75 +1,67 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+function isAdminUser(email: string | undefined): boolean {
+  if (!email) return false
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+  return adminEmails.includes(email.toLowerCase())
+}
 
-  // Evita crash no build/dev local se a env var não estiver setada
+export async function proxy(request: NextRequest) {
+  const response = NextResponse.next({ request })
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Se não tem Supabase configurado, passa direto sem proteger (bom para dev local)
-    return supabaseResponse
+    return response
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value)
-        )
-        supabaseResponse = NextResponse.next({
-          request,
-        })
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        )
-      },
-    },
-  })
+    })
 
-  // IMPORTANT: Do not run code between createServerClient and getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin")
-  const isLoginPage = request.nextUrl.pathname === "/login"
+    const { pathname } = request.nextUrl
+    const isAdminRoute = pathname.startsWith("/admin")
+    const isLoginPage = pathname === "/login"
 
-  // Regra 1: Se tentar acessar rota admin e não estiver logado -> Login
-  if (isAdminRoute && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    // Adiciona a rota que tentou acessar como parâmetro (opcional, útil pro futuro)
-    url.searchParams.set("redirectedFrom", request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    const isAdmin =
+      isAdminUser(user?.email) ||
+      user?.app_metadata?.role === "admin"
+
+    // Bloqueia /admin para quem não é administrador
+    if (isAdminRoute && (!user || !isAdmin)) {
+      return NextResponse.redirect(new URL("/login", request.url))
+    }
+
+    // Admin logado que acessa /login vai direto pro painel
+    if (isLoginPage && user && isAdmin) {
+      return NextResponse.redirect(new URL("/admin", request.url))
+    }
+  } catch {
+    // Se o proxy falhar, passa adiante — o layout faz a verificação
   }
 
-  // Regra 2: Se tentar acessar a tela de login já estando logado -> Admin
-  if (isLoginPage && user) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/admin"
-    return NextResponse.redirect(url)
-  }
-
-  return supabaseResponse
+  return response
 }
 
 export const config = {
   matcher: [
-    /*
-     * Aplica o proxy em todas as rotas exceto:
-     * - _next/static (arquivos estáticos)
-     * - _next/image (otimização de imagens)
-     * - favicon.ico, sitemap.xml, robots.txt
-     * - Arquivos de assets públicos (svg, png, jpg, etc.)
-     */
     "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 }

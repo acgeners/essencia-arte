@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { createProduct, updateProduct, createCategory } from "./actions"
 import { toast } from "sonner"
-import { X, Plus } from "lucide-react"
+import { X, Plus, ChevronDown, ChevronRight } from "lucide-react"
 
 type Product = {
   id: string
@@ -26,41 +26,114 @@ type Option = {
   type: string
 }
 
+const DELIVERY_TYPES = new Set(["shipping", "packaging"])
+
+const typeLabels: Record<string, string> = {
+  color: "Cores",
+  glitter: "Glitters",
+  tassel_color: "Tassels",
+  extra: "Adicionais",
+  packaging: "Embalagens",
+  shipping: "Entrega",
+}
+
+function OptionsGroup({
+  label,
+  options,
+  selectedIds,
+}: {
+  label: string
+  options: Option[]
+  selectedIds: Set<string>
+}) {
+  const [expanded, setExpanded] = useState(true)
+  return (
+    <div className="border border-input rounded-md overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center justify-between px-3 py-2 bg-muted/40 text-xs font-bold uppercase tracking-wide text-muted-foreground hover:bg-muted/70 transition-colors"
+      >
+        {label}
+        {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+      </button>
+      {expanded && (
+        <div className="grid grid-cols-1 gap-0.5 p-2">
+          {options.map((o) => (
+            <label
+              key={o.id}
+              className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/60 px-2 py-1.5 rounded"
+            >
+              <input
+                type="checkbox"
+                name="optionIds"
+                value={o.id}
+                defaultChecked={selectedIds.has(o.id)}
+                className="rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              {o.name}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ProductForm({
   product,
   categories,
   options,
-  onClose
+  onClose,
 }: {
-  product: Product | null,
-  categories: Category[],
-  options: Option[],
+  product: Product | null
+  categories: Category[]
+  options: Option[]
   onClose: () => void
 }) {
   const [isLoading, setIsLoading] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState(product?.images?.[0] || "")
+  const [previews, setPreviews] = useState<{ src: string; isExisting: boolean }[]>(
+    (product?.images ?? []).filter(Boolean).map((src) => ({ src, isExisting: true }))
+  )
   const [localCategories, setLocalCategories] = useState<Category[]>(categories)
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
-    product?.product_category_links.map(l => l.category_id) ?? []
+    product?.product_category_links.map((l) => l.category_id) ?? []
   )
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const newFilesRef = useRef<File[]>([])
 
-  const isOptionSelected = (id: string) =>
-    product?.product_options.some(link => link.option_id === id) ?? false
+  const selectedOptionIds = new Set(
+    product?.product_options.map((l) => l.option_id) ?? []
+  )
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPreviewUrl(URL.createObjectURL(file))
-    }
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    newFilesRef.current = [...newFilesRef.current, ...files]
+    const newPreviews = files.map((f) => ({ src: URL.createObjectURL(f), isExisting: false }))
+    setPreviews((prev) => [...prev, ...newPreviews])
+    // Reset input so same file can be re-added
+    e.target.value = ""
+  }
+
+  function removePreview(index: number) {
+    setPreviews((prev) => {
+      const item = prev[index]
+      if (item && !item.isExisting) {
+        // Remove from new files too (match by position among non-existing)
+        const nonExistingBefore = prev.slice(0, index).filter((p) => !p.isExisting).length
+        newFilesRef.current = newFilesRef.current.filter((_, i) => i !== nonExistingBefore)
+      }
+      return prev.filter((_, i) => i !== index)
+    })
   }
 
   function toggleCategory(id: string) {
-    setSelectedCategoryIds(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    setSelectedCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     )
   }
 
@@ -69,8 +142,10 @@ export function ProductForm({
     setIsAddingCategory(true)
     const result = await createCategory(newCategoryName.trim())
     if (result.success) {
-      setLocalCategories(prev => [...prev, result.category].sort((a, b) => a.name.localeCompare(b.name)))
-      setSelectedCategoryIds(prev => [...prev, result.category.id])
+      setLocalCategories((prev) =>
+        [...prev, result.category].sort((a, b) => a.name.localeCompare(b.name))
+      )
+      setSelectedCategoryIds((prev) => [...prev, result.category.id])
       setNewCategoryName("")
       setShowNewCategory(false)
       toast.success("Categoria criada!")
@@ -89,7 +164,16 @@ export function ProductForm({
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    selectedCategoryIds.forEach(id => formData.append("categoryIds", id))
+
+    // Imagens existentes a manter
+    previews
+      .filter((p) => p.isExisting)
+      .forEach((p) => formData.append("existingImageUrls", p.src))
+
+    // Novos arquivos
+    newFilesRef.current.forEach((f) => formData.append("imageFiles", f))
+
+    selectedCategoryIds.forEach((id) => formData.append("categoryIds", id))
 
     const result = product
       ? await updateProduct(product.id, formData)
@@ -104,25 +188,23 @@ export function ProductForm({
     }
   }
 
-  const groupedOptions = options.reduce((acc, opt) => {
-    const group = acc[opt.type] ?? []
-    group.push(opt)
-    acc[opt.type] = group
-    return acc
-  }, {} as Record<string, Option[]>)
+  // Separar opções comuns das opções de entrega
+  const commonOptions = options.filter((o) => !DELIVERY_TYPES.has(o.type))
+  const deliveryOptions = options.filter((o) => DELIVERY_TYPES.has(o.type))
 
-  const typeLabels: Record<string, string> = {
-    color: "Cores",
-    glitter: "Glitters",
-    tassel_color: "Tassels",
-    extra: "Adicionais",
-    packaging: "Embalagens",
-    shipping: "Entrega"
-  }
+  const groupByType = (opts: Option[]) =>
+    opts.reduce((acc, opt) => {
+      if (!acc[opt.type]) acc[opt.type] = []
+      acc[opt.type]!.push(opt)
+      return acc
+    }, {} as Record<string, Option[]>)
+
+  const commonGroups = groupByType(commonOptions)
+  const deliveryGroups = groupByType(deliveryOptions)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-card p-6 shadow-xl border border-border overflow-y-auto max-h-[90vh]">
+      <div className="w-full max-w-3xl rounded-xl bg-card p-6 shadow-xl border border-border overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">
             {product ? "Editar Produto" : "Novo Produto"}
@@ -133,10 +215,8 @@ export function ProductForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Campo oculto para preservar imagem existente na edição */}
-          <input type="hidden" name="existingImageUrl" value={product?.images?.[0] || ""} />
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Coluna esquerda */}
             <div className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
@@ -168,51 +248,62 @@ export function ProductForm({
                 />
               </div>
 
+              {/* Imagens */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Imagem do Produto
+                  Imagens do Produto
                 </label>
+
+                {/* Grade de previews */}
+                {previews.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {previews.map((p, i) => (
+                      <div key={i} className="relative group">
+                        <img
+                          src={p.src}
+                          alt={`Imagem ${i + 1}`}
+                          className="h-24 w-full object-cover rounded-lg border border-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePreview(i)}
+                          className="absolute top-1 right-1 h-5 w-5 flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Botão de adicionar */}
                 <div
-                  className="relative flex flex-col items-center justify-center w-full rounded-lg border-2 border-dashed border-input bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors"
-                  style={{ minHeight: "120px" }}
+                  className="flex flex-col items-center justify-center w-full rounded-lg border-2 border-dashed border-input bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors py-4"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  {previewUrl ? (
-                    <>
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="h-32 w-full object-cover rounded-lg"
-                        onError={() => setPreviewUrl("")}
-                      />
-                      <span className="absolute bottom-1 right-2 text-xs text-muted-foreground bg-background/80 px-1 rounded">
-                        Clique para trocar
-                      </span>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 py-6 text-muted-foreground">
-                      <Plus className="h-8 w-8" />
-                      <span className="text-sm">Clique para selecionar imagem</span>
-                      <span className="text-xs">JPG, PNG, WEBP</span>
-                    </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    name="imageFile"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
+                  <Plus className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground mt-1">
+                    {previews.length > 0 ? "Adicionar mais imagens" : "Clique para selecionar imagens"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">JPG, PNG, WEBP</span>
                 </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
               </div>
 
+              {/* Categorias */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Categorias (Selecione 1 ou mais)
                 </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto p-2 border border-input rounded-md">
-                  {localCategories.map(c => (
+                <div className="space-y-1 max-h-40 overflow-y-auto p-2 border border-input rounded-md">
+                  {localCategories.map((c) => (
                     <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
                       <input
                         type="checkbox"
@@ -231,8 +322,10 @@ export function ProductForm({
                       type="text"
                       placeholder="Nome da categoria"
                       value={newCategoryName}
-                      onChange={e => setNewCategoryName(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddCategory() } }}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); handleAddCategory() }
+                      }}
                       autoFocus
                       className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
@@ -265,33 +358,43 @@ export function ProductForm({
               </div>
             </div>
 
+            {/* Coluna direita */}
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Opções Disponíveis (Selecione opções que se aplicam ao produto)
-              </label>
-              <div className="space-y-4 max-h-[400px] overflow-y-auto p-3 border border-input rounded-md bg-muted/20">
-                {Object.entries(groupedOptions).map(([type, opts]) => (
-                  <div key={type}>
-                    <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2 px-1">
-                      {typeLabels[type] || type}
-                    </h4>
-                    <div className="grid grid-cols-1 gap-1">
-                      {opts.map(o => (
-                        <label key={o.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/80 p-1 rounded">
-                          <input
-                            type="checkbox"
-                            name="optionIds"
-                            value={o.id}
-                            defaultChecked={isOptionSelected(o.id)}
-                            className="rounded border-gray-300 text-primary focus:ring-primary"
-                          />
-                          {o.name}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              {/* Opções Disponíveis */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Opções Disponíveis
+                </label>
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {Object.entries(commonGroups).map(([type, opts]) => (
+                    <OptionsGroup
+                      key={type}
+                      label={typeLabels[type] ?? type}
+                      options={opts}
+                      selectedIds={selectedOptionIds}
+                    />
+                  ))}
+                </div>
               </div>
+
+              {/* Opções de Entrega */}
+              {deliveryOptions.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Opções de Entrega
+                  </label>
+                  <div className="space-y-2">
+                    {Object.entries(deliveryGroups).map(([type, opts]) => (
+                      <OptionsGroup
+                        key={type}
+                        label={typeLabels[type] ?? type}
+                        options={opts}
+                        selectedIds={selectedOptionIds}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

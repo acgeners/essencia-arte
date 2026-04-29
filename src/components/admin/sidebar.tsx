@@ -18,6 +18,7 @@ import {
   LogOut,
   Menu,
   X,
+  Store,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -47,16 +48,15 @@ export function AdminSidebar() {
   const NavContent = () => (
     <>
       {/* Logo */}
-      <div className="flex h-20 items-center border-b border-sidebar-border px-4 py-4">
+      <div className="flex items-center border-b border-sidebar-border px-4 py-3">
         <Link href="/admin" className="flex items-center gap-2">
-          <img 
-            src="/logo.png" 
-            alt="Essência & Arte" 
-            className="h-20 w-auto object-contain rounded-md"
+          <img
+            src="/logo.png"
+            alt="Essência & Arte"
+            className="h-12 w-auto object-contain rounded-md"
             onError={(e) => {
-              // Fallback se a imagem não existir
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.querySelector('.logo-text')?.classList.remove('hidden');
+              e.currentTarget.style.display = "none"
+              e.currentTarget.parentElement?.querySelector(".logo-text")?.classList.remove("hidden")
             }}
           />
           <span className="logo-text hidden font-display text-lg font-semibold text-foreground">
@@ -92,8 +92,16 @@ export function AdminSidebar() {
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="border-t border-sidebar-border p-2">
+      {/* Bottom actions */}
+      <div className="border-t border-sidebar-border p-2 space-y-0.5">
+        <Link
+          href="/"
+          onClick={() => setIsOpen(false)}
+          className="flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Store className="h-4 w-4 shrink-0" />
+          Ir para loja
+        </Link>
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"

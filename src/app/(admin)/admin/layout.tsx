@@ -1,10 +1,32 @@
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
 import { AdminSidebar } from "@/components/admin/sidebar"
 
-export default function AdminLayout({
+function isAdminUser(email: string | undefined): boolean {
+  if (!email) return false
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+  return adminEmails.includes(email.toLowerCase())
+}
+
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isAdmin =
+    isAdminUser(user?.email) ||
+    user?.app_metadata?.role === "admin"
+
+  if (!user || !isAdmin) {
+    redirect("/login")
+  }
+
   return (
     <div className="flex min-h-dvh bg-background">
       <AdminSidebar />

@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart-store"
+import { createClient } from "@/lib/supabase/client"
 
 const EMOJI: Record<string, string> = {
   canetas: "✒️",
@@ -40,9 +41,23 @@ interface NavCategory {
 export function Header({ categories }: { categories: NavCategory[] }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isBestsellerOpen, setIsBestsellerOpen] = useState(false)
+  const [firstName, setFirstName] = useState<string | null>(null)
   const { items, openCart } = useCartStore()
   const cartCount = items.length
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      const fullName = data.user?.user_metadata?.full_name as string | undefined
+      setFirstName(fullName?.split(" ")[0] ?? null)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      const fullName = session?.user?.user_metadata?.full_name as string | undefined
+      setFirstName(fullName?.split(" ")[0] ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -106,10 +121,13 @@ export function Header({ categories }: { categories: NavCategory[] }) {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/minha-conta"
-              className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-muted md:flex text-muted-foreground hover:text-foreground"
+              className="hidden flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted md:flex text-muted-foreground hover:text-foreground"
               title="Minha Conta"
             >
               <User className="h-5 w-5" />
+              {firstName && (
+                <span className="text-[10px] font-medium leading-none">{firstName}</span>
+              )}
             </Link>
             <Link
               href="/favoritos"

@@ -49,7 +49,7 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
       </p>
 
       <form action={formAction} className="flex flex-col gap-4">
-        <input type="hidden" name="next" value="/minha-conta" />
+        <input type="hidden" name="next" value="/" />
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="login-email" className="text-sm font-medium text-foreground">

@@ -7,6 +7,7 @@ import { getFullCatalog } from "@/server/queries/catalog"
 import { formatBRL } from "@/lib/format"
 import { ProductGallery } from "@/components/public/product-gallery"
 import { FavoriteButton } from "@/components/public/favorite-button"
+import { ScrollToTop } from "@/components/public/scroll-to-top"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -44,6 +45,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <ScrollToTop />
       {/* Breadcrumb / back */}
       <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Link

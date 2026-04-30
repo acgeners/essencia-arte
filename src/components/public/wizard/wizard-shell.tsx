@@ -66,6 +66,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
   } = state
   const requestedProductId = searchParams.get("product")
   const requestedCategorySlug = searchParams.get("category")
+  const isCartReviewEntry = searchParams.get("fromCart") === "1"
   const isGenericEntry = !requestedProductId && !requestedCategorySlug
   const requestedProduct = requestedProductId
     ? catalog.products.find((item) => item.id === requestedProductId)
@@ -80,6 +81,11 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
 
   useLayoutEffect(() => {
     if (!state.hasHydrated) return
+
+    if (isCartReviewEntry) {
+      if (state.productId && state.step !== 4) setStep(4)
+      return
+    }
 
     if (requestedProduct) {
       if (state.productId === requestedProduct.id && state.step >= 2) return
@@ -107,11 +113,13 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
     }
   }, [
     isGenericEntry,
+    isCartReviewEntry,
     requestedCategory,
     requestedProduct,
     startGeneric,
     startCategory,
     startProduct,
+    setStep,
     state.categorySlug,
     state.hasHydrated,
     state.productId,
@@ -141,6 +149,7 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
       wizardState: { ...state },
       displayName,
       categoryName: category?.name ?? "",
+      imageSrc: product?.images?.[0] ?? null,
       totalPrice: pricing.total,
       depositAmount: pricing.deposit,
     })

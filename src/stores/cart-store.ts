@@ -12,6 +12,7 @@ export interface CartItem {
   wizardState: WizardState
   displayName: string
   categoryName: string
+  imageSrc?: string | null
   totalPrice: number
   depositAmount: number
 }

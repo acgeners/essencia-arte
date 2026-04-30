@@ -13,6 +13,50 @@ interface CustomerData {
   notes: string
 }
 
+export async function getCheckoutCustomerData() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("full_name, phone, email")
+    .eq("id", user.id)
+    .maybeSingle()
+
+  return {
+    name:
+      customer?.full_name ??
+      (typeof user.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : ""),
+    phone:
+      customer?.phone ??
+      (typeof user.user_metadata?.phone === "string"
+        ? user.user_metadata.phone
+        : ""),
+    email: customer?.email ?? user.email ?? "",
+  }
+}
+
+export async function getCartProductImages(productIds: string[]) {
+  const uniqueProductIds = Array.from(new Set(productIds.filter(Boolean)))
+  if (uniqueProductIds.length === 0) return {}
+
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("products")
+    .select("id, images")
+    .in("id", uniqueProductIds)
+
+  return Object.fromEntries(
+    (data ?? []).map((product) => [product.id, product.images?.[0] ?? null])
+  ) as Record<string, string | null>
+}
+
 export async function createOrderAction(
   state: WizardState,
   customerData: CustomerData

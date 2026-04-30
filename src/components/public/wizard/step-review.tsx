@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Heart, Sparkles, Award, Gift, Package, Truck, Calendar, Check } from "lucide-react"
 import { useCatalog } from "@/components/public/wizard/catalog-context"
 import { calculatePrice } from "@/lib/pricing/calculate"
@@ -20,8 +21,9 @@ export function StepReview() {
   const pricing = calculatePrice(state, catalog)
   const deadlines = estimateDeadlines(state, catalog)
 
-  const productName =
-    catalog.products.find((p) => p.id === state.productId)?.name ?? "—"
+  const product = catalog.products.find((p) => p.id === state.productId)
+  const productName = product?.name ?? "—"
+  const productImage = product?.images?.[0] ?? null
   const primaryColor =
     catalog.colors.find((c) => c.id === state.colors.primaryId)?.name ?? "—"
   const secondaryColor = state.colors.secondaryEnabled
@@ -57,22 +59,22 @@ export function StepReview() {
   return (
     <div className="space-y-6">
       {/* Hero celebrativo */}
-      <section className="rounded-[var(--radius-xl)] border border-border bg-gradient-to-br from-primary/5 via-card to-card p-6 text-center">
-        <h2 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
+      <section className="rounded-[var(--radius-xl)] border border-border bg-gradient-to-br from-primary/5 via-card to-card px-4 py-4 text-center">
+        <h2 className="font-display text-lg font-semibold text-foreground sm:text-xl">
           Sua peça está ganhando forma
-          <Sparkles className="ml-2 inline h-5 w-5 text-primary" />
+          <Sparkles className="ml-1.5 inline h-4 w-4 text-primary" />
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Confira cada detalhe do seu pedido
         </p>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-4 gap-2">
           {TRUST_ITEMS.map((item) => (
-            <div key={item.strong} className="flex flex-col items-center gap-2 rounded-[var(--radius-lg)] bg-card/60 p-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <item.icon className="h-5 w-5 text-primary" />
+            <div key={item.strong} className="flex flex-col items-center gap-1.5 rounded-[var(--radius-lg)] bg-card/60 py-2 px-1">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <item.icon className="h-4 w-4 text-primary" />
               </span>
-              <span className="text-[11px] leading-tight text-muted-foreground">
+              <span className="text-[10px] leading-tight text-muted-foreground">
                 {item.label}
                 <br />
                 <span className="font-semibold text-foreground">{item.strong}</span>
@@ -89,8 +91,20 @@ export function StepReview() {
             Visualização da sua peça <span className="font-normal text-muted-foreground">(ilustrativa)</span>
           </h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-[160px_1fr]">
-            <div className="flex aspect-square items-center justify-center rounded-[var(--radius-lg)] bg-muted/50">
-              <Package className="h-16 w-16 text-muted-foreground/40" />
+            <div className="relative aspect-square overflow-hidden rounded-[var(--radius-lg)] bg-muted/50">
+              {productImage ? (
+                <Image
+                  src={productImage}
+                  alt={productName}
+                  fill
+                  sizes="160px"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Package className="h-16 w-16 text-muted-foreground/40" />
+                </div>
+              )}
             </div>
             <dl className="space-y-1.5 text-sm">
               <FichaRow label="Modelo" value={productName} />

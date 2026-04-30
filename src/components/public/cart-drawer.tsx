@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import type { CartView } from "@/stores/cart-store"
 import { AnimatePresence, motion } from "framer-motion"
@@ -19,7 +20,12 @@ import {
 } from "lucide-react"
 import QRCode from "react-qr-code"
 import { useCartStore, type CartItem } from "@/stores/cart-store"
-import { createOrderAction } from "@/app/(public)/pedido/confirmacao/actions"
+import { useWizardStore } from "@/stores/wizard-store"
+import {
+  createOrderAction,
+  getCartProductImages,
+  getCheckoutCustomerData,
+} from "@/app/(public)/pedido/confirmacao/actions"
 import { generatePixPayload } from "@/lib/pix"
 import { formatBRL } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -45,6 +51,9 @@ export function CartDrawer() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingCustomerData, setIsLoadingCustomerData] = useState(false)
+  const [hasLoadedCustomerData, setHasLoadedCustomerData] = useState(false)
+  const [productImages, setProductImages] = useState<Record<string, string | null>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [pixCopied, setPixCopied] = useState(false)
 
@@ -58,7 +67,51 @@ export function CartDrawer() {
       }, 300)
       return () => clearTimeout(timer)
     }
-  }, [isOpen])
+  }, [isOpen, setView])
+
+  useEffect(() => {
+    const missingImageProductIds = items
+      .filter((item) => !item.imageSrc && item.wizardState.productId)
+      .map((item) => item.wizardState.productId as string)
+      .filter((productId) => !(productId in productImages))
+
+    if (missingImageProductIds.length === 0) return
+
+    let isCurrent = true
+    getCartProductImages(missingImageProductIds).then((images) => {
+      if (!isCurrent) return
+      setProductImages((current) => ({ ...current, ...images }))
+    })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [items, productImages])
+
+  async function loadCustomerData() {
+    if (hasLoadedCustomerData) return
+    setIsLoadingCustomerData(true)
+
+    try {
+      const savedData = await getCheckoutCustomerData()
+      if (savedData) {
+        setCustomerData((current) => ({
+          ...current,
+          name: current.name || savedData.name || "",
+          phone: current.phone || savedData.phone || "",
+          email: current.email || savedData.email || "",
+        }))
+      }
+    } finally {
+      setIsLoadingCustomerData(false)
+      setHasLoadedCustomerData(true)
+    }
+  }
+
+  function handleCheckout() {
+    setView("checkout")
+    void loadCustomerData()
+  }
 
   const totalPrice = items.reduce((sum, i) => sum + i.totalPrice, 0)
   const totalDeposit = items.reduce((sum, i) => sum + i.depositAmount, 0)
@@ -143,9 +196,26 @@ export function CartDrawer() {
     router.push("/pedido/novo")
   }
 
+  function handleContinueShopping() {
+    closeCart()
+    router.push("/")
+  }
+
+  function handleReviewItem(item: CartItem) {
+    const current = useWizardStore.getState()
+    useWizardStore.setState({
+      ...item.wizardState,
+      step: 4,
+      hasHydrated: current.hasHydrated,
+      productDrafts: current.productDrafts,
+    })
+    closeCart()
+    router.push("/pedido/novo?fromCart=1")
+  }
+
   const viewTitle: Record<View, string> = {
     items: "Minha Sacola",
-    checkout: "Fechar Pedido",
+    checkout: "Finalizar Pedido",
     payment: "Pagamento",
   }
 
@@ -211,10 +281,12 @@ export function CartDrawer() {
                   items={items}
                   totalPrice={totalPrice}
                   totalDeposit={totalDeposit}
+                  productImages={productImages}
                   onRemove={removeItem}
-                  onCheckout={() => setView("checkout")}
-                  onClose={closeCart}
+                  onCheckout={handleCheckout}
+                  onContinueShopping={handleContinueShopping}
                   onCustomize={handleCustomize}
+                  onReviewItem={handleReviewItem}
                 />
               )}
               {view === "checkout" && (
@@ -226,6 +298,7 @@ export function CartDrawer() {
                   setCustomerData={setCustomerData}
                   errors={errors}
                   isSubmitting={isSubmitting}
+                  isLoadingCustomerData={isLoadingCustomerData}
                   submitError={submitError}
                   onSubmit={handleSubmit}
                 />
@@ -255,18 +328,22 @@ function ItemsView({
   items,
   totalPrice,
   totalDeposit,
+  productImages,
   onRemove,
   onCheckout,
-  onClose,
+  onContinueShopping,
   onCustomize,
+  onReviewItem,
 }: {
   items: CartItem[]
   totalPrice: number
   totalDeposit: number
+  productImages: Record<string, string | null>
   onRemove: (id: string) => void
   onCheckout: () => void
-  onClose: () => void
+  onContinueShopping: () => void
   onCustomize: () => void
+  onReviewItem: (item: CartItem) => void
 }) {
   if (items.length === 0) {
     return (
@@ -298,14 +375,36 @@ function ItemsView({
       {/* Item list */}
       <ul className="divide-y divide-border">
         {items.map((item) => (
-          <li key={item.id} className="flex items-start gap-4 px-6 py-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-primary/10">
-              <ShoppingBag className="h-5 w-5 text-primary" />
+          <li key={item.id} className="flex items-start gap-4 px-6 py-5">
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] bg-primary/10">
+              {(() => {
+                const imageSrc =
+                  item.imageSrc ??
+                  (item.wizardState.productId
+                    ? productImages[item.wizardState.productId]
+                    : null)
+
+                return imageSrc ? (
+                <Image
+                  src={imageSrc}
+                  alt={item.displayName}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
+              ) : (
+                <ShoppingBag className="h-5 w-5 text-primary" />
+              )
+              })()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">
+              <button
+                type="button"
+                onClick={() => onReviewItem(item)}
+                className="block max-w-full truncate text-left text-sm font-medium text-foreground transition-colors hover:text-primary hover:underline"
+              >
                 {item.displayName}
-              </p>
+              </button>
               <p className="text-xs text-muted-foreground">{item.categoryName}</p>
               <p className="mt-1 text-sm font-semibold text-primary">
                 {formatBRL(item.totalPrice)}
@@ -340,11 +439,11 @@ function ItemsView({
           onClick={onCheckout}
           className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition-all hover:bg-primary-hover active:scale-[0.98]"
         >
-          Fechar Pedido
+          Finalizar Pedido
         </button>
         <button
           type="button"
-          onClick={onClose}
+          onClick={onContinueShopping}
           className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-muted"
         >
           Continuar comprando
@@ -362,6 +461,7 @@ function CheckoutView({
   setCustomerData,
   errors,
   isSubmitting,
+  isLoadingCustomerData,
   submitError,
   onSubmit,
 }: {
@@ -372,6 +472,7 @@ function CheckoutView({
   setCustomerData: React.Dispatch<React.SetStateAction<CustomerData>>
   errors: Record<string, string>
   isSubmitting: boolean
+  isLoadingCustomerData: boolean
   submitError: string | null
   onSubmit: () => void
 }) {
@@ -408,6 +509,11 @@ function CheckoutView({
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Seus dados
         </p>
+        {isLoadingCustomerData && (
+          <p className="text-xs text-muted-foreground">
+            Buscando seus dados salvos...
+          </p>
+        )}
 
         <DrawerFormField
           id="cart-name"

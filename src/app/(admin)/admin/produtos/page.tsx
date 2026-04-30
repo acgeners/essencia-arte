@@ -1,6 +1,6 @@
 import { getAdminProducts, getAdminCategories } from "@/server/queries/admin/products"
 import { getAdminOptions } from "@/server/queries/admin/options"
-import { ProductsList } from "./products-list"
+import { ProductsList, type Option, type Product } from "./products-list"
 
 export const metadata = {
   title: "Gerenciar Produtos | Admin",
@@ -14,11 +14,11 @@ export default async function AdminProductsPage() {
   ])
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl p-0 sm:p-6">
       <ProductsList 
-        products={products as any} 
+        products={products as Product[]} 
         categories={categories} 
-        options={options as any}
+        options={options as Option[]}
       />
     </div>
   )

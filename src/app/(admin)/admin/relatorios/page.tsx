@@ -27,11 +27,17 @@ export default async function AdminReportsPage() {
     { label: "Transportadora", value: 14, color: "#D8A85F" },
   ]
 
+  const featuredProducts = [
+    ["Caneta personalizada", "42", "R$ 1.932,00", "Correios PAC"],
+    ["Chaveiro resinato", "28", "R$ 980,00", "Retirada"],
+    ["Letra decorativa", "18", "R$ 1.170,00", "SEDEX"],
+  ]
+
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-semibold text-foreground">
+    <div className="mx-auto min-w-0 max-w-7xl space-y-6 overflow-hidden sm:space-y-8">
+      <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
             Relatórios
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -56,7 +62,7 @@ export default async function AdminReportsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-4">
         {cards.map((card, i) => (
           <div key={i} className="rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-soft">
             <div className="flex items-center gap-3">
@@ -69,7 +75,7 @@ export default async function AdminReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
+        <section className="min-w-0 rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-soft sm:p-6">
           <div className="mb-5">
             <h2 className="font-display text-lg font-semibold text-foreground">
               Vendas por produto
@@ -81,7 +87,7 @@ export default async function AdminReportsPage() {
           <PieChart data={salesByProduct} />
         </section>
 
-        <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
+        <section className="min-w-0 rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-soft sm:p-6">
           <div className="mb-5">
             <h2 className="font-display text-lg font-semibold text-foreground">
               Formas de entrega
@@ -94,11 +100,32 @@ export default async function AdminReportsPage() {
         </section>
       </div>
 
-      <div className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
+      <div className="min-w-0 rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-soft sm:p-6">
         <h2 className="font-display text-lg font-semibold text-foreground">
           Produtos em destaque
         </h2>
-        <div className="mt-5 overflow-x-auto">
+        <div className="mt-5 grid gap-3 md:hidden">
+          {featuredProducts.map(([product, orders, revenue, delivery]) => (
+            <article key={product} className="rounded-[var(--radius-lg)] border border-border bg-background p-4">
+              <h3 className="truncate text-sm font-semibold text-foreground">{product}</h3>
+              <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Pedidos</dt>
+                  <dd className="font-semibold text-foreground">{orders}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Faturamento</dt>
+                  <dd className="font-semibold text-foreground">{revenue}</dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-xs text-muted-foreground">Entrega principal</dt>
+                  <dd className="font-semibold text-foreground">{delivery}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+        <div className="mt-5 hidden overflow-x-auto md:block">
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase text-muted-foreground">
               <tr className="border-b border-border">
@@ -109,11 +136,7 @@ export default async function AdminReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {[
-                ["Caneta personalizada", "42", "R$ 1.932,00", "Correios PAC"],
-                ["Chaveiro resinato", "28", "R$ 980,00", "Retirada"],
-                ["Letra decorativa", "18", "R$ 1.170,00", "SEDEX"],
-              ].map(([product, orders, revenue, delivery]) => (
+              {featuredProducts.map(([product, orders, revenue, delivery]) => (
                 <tr key={product}>
                   <td className="py-3 font-medium text-foreground">{product}</td>
                   <td className="py-3 text-muted-foreground">{orders}</td>

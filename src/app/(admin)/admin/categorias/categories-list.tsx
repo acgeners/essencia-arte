@@ -47,19 +47,60 @@ export function CategoriesList({ categories }: { categories: Category[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="min-w-0 space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground">Gerenciar Categorias</h1>
         <button
           onClick={handleAddNew}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
+          className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />
           Nova Categoria
         </button>
       </div>
 
-      <div className="rounded-md border border-border bg-card">
+      <div className="grid gap-3 md:hidden">
+        {categories.map((cat) => (
+          <article key={cat.id} className="rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-soft">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="truncate text-base font-semibold text-foreground">{cat.name}</h2>
+                <p className="mt-1 truncate text-sm text-muted-foreground">/{cat.slug}</p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <button
+                  onClick={() => handleEdit(cat)}
+                  className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                  title="Editar"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(cat.id, cat.productsCount)}
+                  disabled={isDeleting === cat.id}
+                  className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                  title="Excluir"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm">
+              <span className="text-muted-foreground">Produtos vinculados</span>
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                {cat.productsCount}
+              </span>
+            </div>
+          </article>
+        ))}
+        {categories.length === 0 && (
+          <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+            Nenhuma categoria cadastrada.
+          </div>
+        )}
+      </div>
+
+      <div className="hidden rounded-md border border-border bg-card md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-muted-foreground">
             <thead className="text-xs uppercase bg-muted/50 text-foreground border-b border-border">

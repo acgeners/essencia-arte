@@ -10,7 +10,7 @@ interface Point {
 export function RevenueChart({ data }: { data: Point[] }) {
   if (data.length === 0) return null
 
-  const W = 720
+  const W = 640
   const H = 200
   const PADX = 40
   const PADY = 20
@@ -31,8 +31,8 @@ export function RevenueChart({ data }: { data: Point[] }) {
   })
 
   return (
-    <div className="w-full overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-52 w-full min-w-[480px]">
+    <div className="w-full overflow-hidden">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-44 w-full sm:h-52">
         <defs>
           <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="currentColor" className="text-primary" stopOpacity="0.25" />

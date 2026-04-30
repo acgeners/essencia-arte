@@ -4,18 +4,11 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
   BarChart3,
-  BellRing,
   CheckCircle2,
-  FileDown,
-  HeartHandshake,
-  LockKeyhole,
-  MessageCircle,
   Package,
   ReceiptText,
   Settings2,
-  ShieldCheck,
   ShoppingCart,
-  TrendingDown,
   TrendingUp,
   Wrench,
 } from "lucide-react"
@@ -26,7 +19,7 @@ import { StatCard } from "@/components/ui/stat-card"
 import { formatBRL } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-const STORAGE_KEY = "essencia-arte-admin-home-widgets"
+const STORAGE_KEY = "essencia-arte-admin-home-widgets-v2"
 
 const MOCK_REVENUE_SERIES = [
   { date: "05/05", value: 320 },
@@ -66,46 +59,44 @@ const quickLinks = [
   { id: "finance", label: "Financeiro", href: "/admin/financeiro", icon: ReceiptText },
 ]
 
+const suggestedLinkIds = ["products", "orders", "reports"]
+
 const widgetOptions = [
   { id: "kpis", label: "Resumo geral" },
-  { id: "revenue", label: "Faturamento 7 dias" },
   { id: "orders", label: "Últimos pedidos" },
+  { id: "revenue", label: "Faturamento 7 dias" },
   { id: "reports", label: "Relatórios" },
-  { id: "production", label: "Pedidos em produção" },
-  { id: "finance", label: "Financeiro" },
-  { id: "integrations", label: "Integrações" },
-  { id: "automations", label: "Automações" },
-  { id: "security", label: "Segurança" },
 ] as const
 
 type WidgetId = (typeof widgetOptions)[number]["id"]
 
-const defaultWidgets: WidgetId[] = ["kpis", "revenue", "orders", "reports"]
+const defaultWidgets: WidgetId[] = []
+const defaultLinks = ["products", "orders"]
 
 function loadHomePrefs() {
   if (typeof window === "undefined") {
-    return { links: ["products", "orders", "reports"], widgets: defaultWidgets }
+    return { links: defaultLinks, widgets: defaultWidgets }
   }
   const saved = window.localStorage.getItem(STORAGE_KEY)
   if (!saved) {
-    return { links: ["products", "orders", "reports"], widgets: defaultWidgets }
+    return { links: defaultLinks, widgets: defaultWidgets }
   }
   try {
     const parsed = JSON.parse(saved) as { links?: string[]; widgets?: WidgetId[] }
     return {
-      links: Array.isArray(parsed.links) ? parsed.links : ["products", "orders", "reports"],
+      links: Array.isArray(parsed.links) ? parsed.links : defaultLinks,
       widgets: Array.isArray(parsed.widgets) ? parsed.widgets : defaultWidgets,
     }
   } catch {
     window.localStorage.removeItem(STORAGE_KEY)
-    return { links: ["products", "orders", "reports"], widgets: defaultWidgets }
+    return { links: defaultLinks, widgets: defaultWidgets }
   }
 }
 
 export function AdminHome() {
   const [selectedLinks, setSelectedLinks] = useState<string[]>(() => loadHomePrefs().links)
   const [selectedWidgets, setSelectedWidgets] = useState<WidgetId[]>(() => loadHomePrefs().widgets)
-  const [customizing, setCustomizing] = useState(false)
+  const [customizing, setCustomizing] = useState(true)
   const enabled = useMemo(() => new Set(selectedWidgets), [selectedWidgets])
 
   useEffect(() => {
@@ -127,21 +118,24 @@ export function AdminHome() {
     )
   }
 
+  const visibleLinks = quickLinks.filter((link) => selectedLinks.includes(link.id))
+  const suggestedLinks = quickLinks.filter((link) => suggestedLinkIds.includes(link.id))
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-semibold text-foreground">
+    <div className="min-w-0 max-w-full space-y-6 overflow-hidden sm:space-y-8">
+      <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
             Home
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Escolha os atalhos e dados que quer ver primeiro ao abrir o painel.
+          <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground sm:text-base">
+            Escolha apenas os atalhos e blocos que quer ver primeiro ao abrir o painel.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setCustomizing((value) => !value)}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted"
+          className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted sm:w-auto"
         >
           <Settings2 className="h-4 w-4" />
           Personalizar Home
@@ -149,8 +143,8 @@ export function AdminHome() {
       </div>
 
       {customizing && (
-        <section className="grid gap-5 rounded-[var(--radius-xl)] border border-border bg-card p-5 shadow-soft lg:grid-cols-2">
-          <div>
+        <section className="grid min-w-0 gap-5 rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-soft sm:p-5 lg:grid-cols-2">
+          <div className="min-w-0">
             <h2 className="text-sm font-semibold text-foreground">Atalhos favoritos</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {quickLinks.map((link) => (
@@ -171,8 +165,8 @@ export function AdminHome() {
             </div>
           </div>
 
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Resumo geral</h2>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground">Blocos sugeridos</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {widgetOptions.map((widget) => (
                 <button
@@ -194,14 +188,17 @@ export function AdminHome() {
         </section>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {quickLinks
-          .filter((link) => selectedLinks.includes(link.id))
-          .map((link) => (
+      <section className="min-w-0">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-foreground">Sugestões rápidas</h2>
+          <span className="text-xs text-muted-foreground">Edite acima</span>
+        </div>
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {(visibleLinks.length > 0 ? visibleLinks : suggestedLinks).map((link) => (
             <Link
               key={link.id}
               href={link.href}
-              className="group rounded-[var(--radius-xl)] border border-border bg-card p-5 shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card"
+              className="group min-w-0 rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card sm:p-5"
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <link.icon className="h-5 w-5" />
@@ -214,7 +211,14 @@ export function AdminHome() {
               </p>
             </Link>
           ))}
-      </div>
+        </div>
+      </section>
+
+      {selectedWidgets.length === 0 && (
+        <section className="rounded-[var(--radius-xl)] border border-dashed border-border bg-card/60 p-4 text-sm text-muted-foreground sm:p-5">
+          Nenhum bloco de dados está fixado por padrão. Use “Personalizar Home” para exibir apenas o que for útil no seu dia a dia.
+        </section>
+      )}
 
       {enabled.has("kpis") && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -226,135 +230,45 @@ export function AdminHome() {
       )}
 
       {enabled.has("revenue") && (
-        <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
+        <section className="min-w-0 rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-soft sm:p-6">
           <h2 className="font-display text-lg font-semibold text-foreground">
             Faturamento (últimos 7 dias)
           </h2>
-          <div className="mt-4">
+          <div className="mt-4 min-w-0">
             <RevenueChart data={MOCK_REVENUE_SERIES} />
           </div>
         </section>
       )}
 
       {enabled.has("orders") && (
-        <section className="rounded-[var(--radius-xl)] border border-border bg-card shadow-soft">
-          <div className="flex items-center justify-between border-b border-border p-5">
+        <section className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-soft">
+          <div className="flex items-center justify-between gap-3 border-b border-border p-4 sm:p-5">
             <h2 className="font-display text-lg font-semibold text-foreground">
               Pedidos recentes
             </h2>
-            <Link href="/admin/pedidos" className="text-xs font-semibold text-primary hover:underline">
-              Ver todos os pedidos →
+            <Link href="/admin/pedidos" className="shrink-0 text-xs font-semibold text-primary hover:underline">
+              Ver todos
             </Link>
           </div>
           <RecentOrdersPanel orders={MOCK_RECENT_ORDERS} />
         </section>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        {enabled.has("reports") && (
-          <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
-            <h2 className="font-display text-lg font-semibold text-foreground">Relatórios</h2>
-            <div className="mt-5 grid gap-5 2xl:grid-cols-2">
-              <div>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Vendas por produto</h3>
-                <PieChart data={PRODUCT_REPORT} />
-              </div>
-              <div>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Formas de entrega</h3>
-                <PieChart data={DELIVERY_REPORT} />
-              </div>
+      {enabled.has("reports") && (
+        <section className="rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-soft sm:p-6">
+          <h2 className="font-display text-lg font-semibold text-foreground">Relatórios</h2>
+          <div className="mt-5 grid gap-5 xl:grid-cols-2">
+            <div className="min-w-0">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Vendas por produto</h3>
+              <PieChart data={PRODUCT_REPORT} />
             </div>
-          </section>
-        )}
-
-        {enabled.has("finance") && (
-          <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
-            <h2 className="font-display text-lg font-semibold text-foreground">Financeiro</h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {[
-                { label: "Faturamento", value: 4680.5, icon: TrendingUp, tone: "text-success" },
-                { label: "Despesas", value: 1180.9, icon: TrendingDown, tone: "text-destructive" },
-                { label: "Lucro líquido", value: 3499.6, icon: ReceiptText, tone: "text-primary" },
-              ].map((item) => (
-                <div key={item.label} className="rounded-[var(--radius-lg)] border border-border bg-background p-4">
-                  <item.icon className={`h-4 w-4 ${item.tone}`} />
-                  <p className="mt-3 text-xs text-muted-foreground">{item.label}</p>
-                  <p className="mt-1 text-lg font-bold text-foreground">{formatBRL(item.value)}</p>
-                </div>
-              ))}
+            <div className="min-w-0">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Formas de entrega</h3>
+              <PieChart data={DELIVERY_REPORT} />
             </div>
-          </section>
-        )}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {enabled.has("production") && (
-          <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
-            <h2 className="font-display text-lg font-semibold text-foreground">Pedidos em produção</h2>
-            <div className="mt-4 space-y-3">
-              {MOCK_RECENT_ORDERS.filter((order) => order.status === "Em produção").map((order) => (
-                <div key={order.id} className="rounded-[var(--radius-lg)] bg-primary/5 p-3">
-                  <p className="text-sm font-semibold text-foreground">#{order.id}</p>
-                  <p className="text-xs text-muted-foreground">{order.customer}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {enabled.has("integrations") && (
-          <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
-            <h2 className="font-display text-lg font-semibold text-foreground">Integrações</h2>
-            <div className="mt-4 space-y-3">
-              {[
-                { label: "WhatsApp", status: "Conectado", icon: MessageCircle },
-                { label: "Instagram", status: "Conectado", icon: HeartHandshake },
-                { label: "Google Sheets", status: "Desconectado", icon: FileDown },
-              ].map((integration) => (
-                <div key={integration.label} className="flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-background p-3 text-sm">
-                  <span className="flex items-center gap-2 font-medium text-foreground">
-                    <integration.icon className="h-4 w-4 text-primary" />
-                    {integration.label}
-                  </span>
-                  <span className={integration.status === "Conectado" ? "text-success" : "text-muted-foreground"}>
-                    {integration.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {enabled.has("automations") && (
-          <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
-            <h2 className="font-display text-lg font-semibold text-foreground">Automações</h2>
-            <div className="mt-4 space-y-3">
-              {["Confirmar pagamento", "Avisar início de produção", "Registrar na planilha"].map((automation) => (
-                <div key={automation} className="flex gap-3 rounded-[var(--radius-lg)] bg-primary/5 p-3 text-sm text-foreground">
-                  <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  {automation}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {enabled.has("security") && (
-          <section className="rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-soft">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-success/10">
-              <ShieldCheck className="h-5 w-5 text-success" />
-            </div>
-            <h2 className="mt-4 font-display text-lg font-semibold text-foreground">Segurança</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Dados protegidos por autenticação administrativa e permissões no Supabase.
-            </p>
-            <div className="mt-4 flex items-center gap-2 rounded-[var(--radius-lg)] border border-success/20 bg-success/5 px-3 py-2 text-xs font-semibold text-success">
-              <LockKeyhole className="h-4 w-4" />
-              Ambiente protegido
-            </div>
-          </section>
-        )}
-      </div>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

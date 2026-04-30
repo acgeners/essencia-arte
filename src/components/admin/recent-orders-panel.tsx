@@ -40,14 +40,14 @@ export function RecentOrdersPanel({ orders }: { orders: OrderRow[] }) {
 
   return (
     <div>
-      <div className="flex gap-2 border-b border-border px-5 py-2">
+      <div className="flex gap-1 overflow-x-auto border-b border-border px-3 py-2 sm:gap-2 sm:px-5">
         {TABS.map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
               tab === t
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -65,15 +65,15 @@ export function RecentOrdersPanel({ orders }: { orders: OrderRow[] }) {
           </li>
         )}
         {filtered.map((o) => (
-          <li key={o.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-muted/40">
+          <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40 sm:px-5">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">#{o.id}</p>
-              <p className="text-xs text-muted-foreground">{o.customer}</p>
+              <p className="truncate text-xs text-muted-foreground">{o.customer}</p>
               <p className="text-[10px] text-muted-foreground">{o.date}</p>
             </div>
             <span
               className={cn(
-                "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold",
+                "max-w-[112px] shrink-0 truncate rounded-full px-2.5 py-1 text-[10px] font-semibold sm:max-w-none",
                 STATUS_STYLES[o.status]
               )}
             >

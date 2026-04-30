@@ -171,6 +171,9 @@ export function WizardShell({ catalog }: { catalog: FullCatalog }) {
       handleAddToCart()
     } else {
       nextStep()
+      if (window.matchMedia("(max-width: 767px)").matches) {
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" })
+      }
     }
   }
 

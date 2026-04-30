@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { StatusBadge } from "@/components/ui/status-badge"
+import type { OrderStatus } from "@/lib/constants"
 import { Search, ChevronRight } from "lucide-react"
 
 export const metadata = {
@@ -11,10 +12,10 @@ import { getOrders } from "@/server/queries/orders"
 export default async function AdminOrdersPage() {
   const orders = await getOrders()
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-semibold text-foreground">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
             Pedidos
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -23,10 +24,10 @@ export default async function AdminOrdersPage() {
         </div>
       </div>
 
-      <div className="rounded-[var(--radius-xl)] border border-border bg-card shadow-soft">
+      <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-soft">
         {/* Toolbar */}
         <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full max-w-sm">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -35,7 +36,7 @@ export default async function AdminOrdersPage() {
             />
           </div>
           <div className="flex gap-2">
-            <select className="h-10 rounded-[var(--radius-md)] border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <select className="h-10 w-full rounded-[var(--radius-md)] border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto">
               <option value="all">Todos os status</option>
               <option value="pending_payment">Aguardando Pagamento</option>
               <option value="confirmed">Confirmado</option>
@@ -45,7 +46,44 @@ export default async function AdminOrdersPage() {
         </div>
 
         {/* Table/List */}
-        <div className="overflow-x-auto">
+        <div className="grid gap-3 p-3 md:hidden">
+          {orders.map((order) => (
+            <article key={order.id} className="rounded-[var(--radius-lg)] border border-border bg-background p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-foreground">{order.code}</h2>
+                  <p className="mt-1 truncate text-sm font-medium text-foreground">{order.customer_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(order.created_at || "").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <Link
+                  href={`/admin/pedidos/${order.id}`}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="sr-only">Ver detalhes</span>
+                </Link>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <StatusBadge status={order.status as OrderStatus} size="sm" />
+                <span className="text-sm font-semibold text-primary">
+                  R$ {(order.total || 0).toFixed(2).replace(".", ",")}
+                </span>
+              </div>
+              <p className="mt-3 truncate border-t border-border pt-3 text-sm text-muted-foreground">
+                {order.order_items?.[0]?.products?.name || "Produto"}
+              </p>
+            </article>
+          ))}
+          {orders.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Nenhum pedido encontrado.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
@@ -77,7 +115,7 @@ export default async function AdminOrdersPage() {
                     {order.order_items?.[0]?.products?.name || "Produto"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <StatusBadge status={order.status as any} />
+                    <StatusBadge status={order.status as OrderStatus} />
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right font-medium text-foreground">
                     R$ {(order.total || 0).toFixed(2).replace(".", ",")}

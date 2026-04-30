@@ -12,7 +12,7 @@ export default async function AdminOptionsPage() {
   ])
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="mx-auto max-w-6xl p-0 sm:p-6">
       <OptionsList options={options} products={products} />
     </div>
   )

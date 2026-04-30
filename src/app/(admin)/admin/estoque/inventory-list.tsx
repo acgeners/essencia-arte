@@ -54,20 +54,6 @@ export function InventoryList({ items: initialItems }: { items: InventoryItem[] 
     }
   }, [])
 
-  // Sincronizar quando props mudam (fallback ou refresh manual)
-  useEffect(() => {
-    setItemsList(initialItems)
-    setQuantities(prev => {
-      const next = { ...prev }
-      initialItems.forEach(item => {
-        // Só sobrescreve se o valor atual for igual ao anterior conhecido (não foi mexido localmente)
-        next[item.id] = item.quantity
-      })
-      return next
-    })
-  }, [initialItems])
-
-
   const handleSave = async (id: string) => {
     setSavingId(id)
     const newQty = quantities[id] ?? 0
@@ -82,8 +68,8 @@ export function InventoryList({ items: initialItems }: { items: InventoryItem[] 
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="min-w-0 space-y-6">
+      <div className="min-w-0">
         <h1 className="text-2xl font-bold text-foreground">Controle de Estoque</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Ajuste as quantidades dos itens físicos (tangíveis). Itens com quantidade 0 saem da vitrine automaticamente.
@@ -91,7 +77,58 @@ export function InventoryList({ items: initialItems }: { items: InventoryItem[] 
       </div>
 
       <div className="rounded-md border border-border bg-card overflow-hidden">
-        <table className="w-full text-sm text-left text-muted-foreground">
+        <div className="grid gap-3 p-3 md:hidden">
+          {itemsList.map((item) => {
+            const currentQty = quantities[item.id] ?? 0
+            const realTimeQty = item.quantity
+            const isChanged = currentQty !== realTimeQty
+            const isLowStock = currentQty <= 5
+
+            return (
+              <article key={item.id} className="rounded-[var(--radius-lg)] border border-border bg-background p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-sm font-semibold text-foreground">{item.name}</h2>
+                    <span className="mt-2 inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                      {item.type}
+                    </span>
+                  </div>
+                  {isLowStock && <span className="shrink-0 text-[10px] font-bold uppercase text-red-500">Atenção</span>}
+                </div>
+                <div className="mt-4 flex items-end gap-2">
+                  <label className="min-w-0 flex-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quantidade</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={currentQty}
+                      onChange={(e) => setQuantities({ ...quantities, [item.id]: parseInt(e.target.value) || 0 })}
+                      className={`mt-1 h-10 w-full rounded-md border ${isLowStock ? 'border-red-300 focus:ring-red-500' : 'border-input focus:ring-primary'} bg-background px-3 text-sm focus:outline-none focus:ring-2`}
+                    />
+                  </label>
+                  <button
+                    onClick={() => handleSave(item.id)}
+                    disabled={!isChanged || savingId === item.id}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-white disabled:bg-muted disabled:text-muted-foreground disabled:opacity-50"
+                    title="Salvar"
+                  >
+                    <Save className="h-4 w-4" />
+                  </button>
+                </div>
+                {realTimeQty !== currentQty && (
+                  <p className="mt-2 text-[10px] italic text-muted-foreground">No banco: {realTimeQty}</p>
+                )}
+              </article>
+            )
+          })}
+          {itemsList.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Nenhum item tangível cadastrado. Vá em Opções para cadastrar.
+            </div>
+          )}
+        </div>
+
+        <table className="hidden w-full text-sm text-left text-muted-foreground md:table">
           <thead className="text-xs uppercase bg-muted/50 text-foreground border-b border-border">
             <tr>
               <th className="px-6 py-4 font-semibold">Item</th>

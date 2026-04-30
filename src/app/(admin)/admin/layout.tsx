@@ -28,12 +28,12 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="flex min-h-dvh overflow-x-hidden bg-background">
       <AdminSidebar />
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Header padding for mobile hamburger */}
         <div className="h-16 shrink-0 lg:hidden" />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

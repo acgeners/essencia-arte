@@ -9,7 +9,7 @@ export default async function AdminInventoryPage() {
   const items = await getAdminInventory()
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl p-0 sm:p-6">
       <InventoryList items={items} />
     </div>
   )

@@ -9,7 +9,7 @@ export default async function AdminCategoriesPage() {
   const categories = await getAdminCategoriesList()
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl p-0 sm:p-6">
       <CategoriesList categories={categories} />
     </div>
   )

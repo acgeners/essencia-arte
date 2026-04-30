@@ -61,9 +61,9 @@ export function OptionsList({ options, products }: { options: Option[], products
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
+    <div className="min-w-0 space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground">Gerenciar Opções</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Ative, desative e controle quais opções aparecem em quais produtos.
@@ -71,7 +71,7 @@ export function OptionsList({ options, products }: { options: Option[], products
         </div>
         <button
           onClick={() => setIsFormOpen(true)}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
+          className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />
           Nova Opção
@@ -81,10 +81,50 @@ export function OptionsList({ options, products }: { options: Option[], products
       <div className="grid gap-8">
         {Object.entries(groupedOptions).map(([type, opts]) => (
           <div key={type} className="rounded-md border border-border bg-card overflow-hidden">
-            <div className="bg-muted/50 px-6 py-3 border-b border-border">
+            <div className="bg-muted/50 px-4 py-3 border-b border-border sm:px-6">
               <h2 className="font-bold text-foreground uppercase tracking-wider text-sm">Tipo: {type}</h2>
             </div>
-            <table className="w-full text-sm text-left text-muted-foreground">
+            <div className="grid gap-3 p-3 md:hidden">
+              {opts.map((opt) => (
+                <article key={opt.id} className="rounded-[var(--radius-lg)] border border-border bg-background p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-semibold text-foreground">{opt.name}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {opt.price ? formatBRL(opt.price) : "Sem adicional"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleToggle(opt.id, opt.is_active || false)}
+                      className={`inline-flex shrink-0 items-center justify-center p-2 rounded-md transition-colors ${
+                        opt.is_active 
+                        ? "bg-green-100 text-green-700 hover:bg-green-200" 
+                        : "bg-red-100 text-red-700 hover:bg-red-200"
+                      }`}
+                      title={opt.is_active ? "Desativar" : "Ativar"}
+                    >
+                      <Power className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                      Estoque: {opt.is_tangible ? "Sim" : "Não"}
+                    </span>
+                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${opt.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                      {opt.is_active ? "Ativa" : "Inativa"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => openLinkModal(opt)}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    {opt.product_options.length === 0 ? "Global (Todos)" : `${opt.product_options.length} produtos`}
+                  </button>
+                </article>
+              ))}
+            </div>
+            <table className="hidden w-full text-sm text-left text-muted-foreground md:table">
               <thead className="text-xs uppercase bg-background text-foreground border-b border-border">
                 <tr>
                   <th className="px-6 py-3 font-semibold">Nome</th>

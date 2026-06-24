@@ -4,7 +4,7 @@
 
 /** Status de pedido com labels em pt-BR */
 export const ORDER_STATUS = {
-  awaiting_payment: "Aguardando pagamento",
+  pending_payment: "Aguardando pagamento",
   payment_confirmed: "Pagamento confirmado",
   in_production: "Em produção",
   ready: "Pronto",
@@ -17,7 +17,7 @@ export type OrderStatus = keyof typeof ORDER_STATUS
 
 /** Cores semânticas por status (para badges) */
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  awaiting_payment: "bg-warning/15 text-warning",
+  pending_payment: "bg-warning/15 text-warning",
   payment_confirmed: "bg-success/15 text-success",
   in_production: "bg-primary/15 text-primary",
   ready: "bg-accent/30 text-foreground",
@@ -28,7 +28,7 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
 
 /** Transições válidas de status (máquina de estados) */
 export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  awaiting_payment: ["payment_confirmed", "cancelled"],
+  pending_payment: ["payment_confirmed", "cancelled"],
   payment_confirmed: ["in_production", "cancelled"],
   in_production: ["ready", "cancelled"],
   ready: ["shipped", "cancelled"],

@@ -99,6 +99,8 @@ export type Database = {
           id: string
           phone: string | null
           updated_at: string | null
+          cpf_cnpj: string | null
+          asaas_customer_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -107,6 +109,8 @@ export type Database = {
           id: string
           phone?: string | null
           updated_at?: string | null
+          cpf_cnpj?: string | null
+          asaas_customer_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -115,6 +119,8 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string | null
+          cpf_cnpj?: string | null
+          asaas_customer_id?: string | null
         }
         Relationships: []
       }
@@ -322,6 +328,7 @@ export type Database = {
           customer_name: string
           customer_notes: string | null
           customer_phone: string
+          customer_cpf_cnpj: string | null
           deposit: number
           id: string
           shipping_cost: number
@@ -339,6 +346,7 @@ export type Database = {
           customer_name: string
           customer_notes?: string | null
           customer_phone: string
+          customer_cpf_cnpj?: string | null
           deposit: number
           id?: string
           shipping_cost?: number
@@ -356,6 +364,7 @@ export type Database = {
           customer_name?: string
           customer_notes?: string | null
           customer_phone?: string
+          customer_cpf_cnpj?: string | null
           deposit?: number
           id?: string
           shipping_cost?: number
@@ -474,6 +483,74 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          id: string
+          order_id: string
+          asaas_payment_id: string | null
+          payment_type: string
+          method: string
+          status: string
+          amount: number
+          pix_qr_code: string | null
+          pix_copy_paste: string | null
+          pix_expiry: string | null
+          boleto_url: string | null
+          boleto_barcode: string | null
+          boleto_expiry: string | null
+          invoice_url: string | null
+          external_reference: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          asaas_payment_id?: string | null
+          payment_type: string
+          method: string
+          status?: string
+          amount: number
+          pix_qr_code?: string | null
+          pix_copy_paste?: string | null
+          pix_expiry?: string | null
+          boleto_url?: string | null
+          boleto_barcode?: string | null
+          boleto_expiry?: string | null
+          invoice_url?: string | null
+          external_reference?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          asaas_payment_id?: string | null
+          payment_type?: string
+          method?: string
+          status?: string
+          amount?: number
+          pix_qr_code?: string | null
+          pix_copy_paste?: string | null
+          pix_expiry?: string | null
+          boleto_url?: string | null
+          boleto_barcode?: string | null
+          boleto_expiry?: string | null
+          invoice_url?: string | null
+          external_reference?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]

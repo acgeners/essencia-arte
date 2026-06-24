@@ -11,6 +11,8 @@ const serverEnvSchema = z.object({
   SENTRY_AUTH_TOKEN: z.string().optional(),
   WHATSAPP_BUSINESS_NUMBER: z.string().optional(),
   PIX_KEY: z.string().optional(),
+  PIX_MERCHANT_NAME: z.string().optional(),
+  PIX_MERCHANT_CITY: z.string().optional(),
   UPSTASH_REDIS_REST_URL: z.string().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 })

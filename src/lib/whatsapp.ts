@@ -2,7 +2,7 @@ import { WHATSAPP_BASE_URL } from "@/lib/constants"
 import type { OrderStatus } from "@/lib/constants"
 
 const templates: Record<OrderStatus, (name: string, code: string) => string> = {
-  awaiting_payment: (name, code) =>
+  pending_payment: (name, code) =>
     `Olá ${name}! 👋 Recebemos seu pedido *#${code}*. Para confirmarmos, precisamos do pagamento da entrada via Pix. Qualquer dúvida, é só falar! ❤️ Essência & Arte`,
 
   payment_confirmed: (name, code) =>

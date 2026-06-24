@@ -19,7 +19,7 @@ import type { OrderStatus } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
 const statusConfig: Record<OrderStatus, { icon: React.ElementType; color: string; label: string }> = {
-  awaiting_payment:  { icon: Clock,        color: "text-warning",     label: "Aguardar pagamento" },
+  pending_payment:   { icon: Clock,        color: "text-warning",     label: "Aguardar pagamento" },
   payment_confirmed: { icon: CheckCircle2, color: "text-success",     label: "Confirmar pagamento" },
   in_production:     { icon: Clock,        color: "text-primary",     label: "Iniciar produção" },
   ready:             { icon: Package,      color: "text-accent-foreground", label: "Marcar como pronto" },

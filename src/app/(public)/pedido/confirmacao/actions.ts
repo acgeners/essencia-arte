@@ -4,6 +4,7 @@ import { getFullCatalog } from "@/server/queries/catalog"
 import { calculatePrice } from "@/lib/pricing/calculate"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { generatePixPayload } from "@/lib/pix"
 import type { WizardState } from "@/stores/wizard-store"
 
 interface CustomerData {
@@ -11,6 +12,7 @@ interface CustomerData {
   phone: string
   email: string
   notes: string
+  cpfCnpj: string
 }
 
 export async function getCheckoutCustomerData() {
@@ -145,7 +147,22 @@ export async function createOrderAction(
       return { success: false, error: "Ocorreu um erro ao salvar o pedido." }
     }
 
-    return { success: true, orderId: data }
+    const orderId = data as string
+
+    // 4. Salvar customer_cpf_cnpj no pedido e no customer (se existir)
+    await admin
+      .from("orders")
+      .update({ customer_cpf_cnpj: customerData.cpfCnpj || null })
+      .eq("id", orderId)
+
+    if (customerId && customerData.cpfCnpj) {
+      await admin
+        .from("customers")
+        .update({ cpf_cnpj: customerData.cpfCnpj })
+        .eq("id", customerId)
+    }
+
+    return { success: true, orderId, deposit: pricing.deposit }
   } catch (err: unknown) {
     console.error("Action Error:", err)
     return {
@@ -153,4 +170,27 @@ export async function createOrderAction(
       error: err instanceof Error ? err.message : "Erro desconhecido ao processar o pedido.",
     }
   }
+}
+
+/**
+ * Gera o payload PIX estático (copia-e-cola) para o valor da entrada.
+ * Os dados do recebedor são públicos e vêm do .env. Retorna payload null se a
+ * chave PIX não estiver configurada (nesse caso o pagamento é combinado via WhatsApp).
+ */
+export async function createPixPayload(
+  amount: number
+): Promise<{ payload: string | null }> {
+  const key = process.env.PIX_KEY
+  if (!key || !Number.isFinite(amount) || amount <= 0) {
+    return { payload: null }
+  }
+
+  const payload = generatePixPayload({
+    key,
+    merchantName: process.env.PIX_MERCHANT_NAME || "Essencia e Arte",
+    merchantCity: process.env.PIX_MERCHANT_CITY || "BRASIL",
+    amount,
+  })
+
+  return { payload }
 }

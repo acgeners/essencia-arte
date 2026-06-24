@@ -48,7 +48,7 @@ export function generatePixPayload({
   const additionalData = field("05", safeTxid)
 
   // Payload sem CRC
-  let payload =
+  const payload =
     field("00", "01") +                          // Payload format indicator
     field("01", "12") +                          // Static QR (reusable)
     field("26", merchantInfo) +                  // Merchant account info

@@ -1,16 +1,17 @@
 import { Heart } from "lucide-react"
 import Link from "next/link"
 
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5511999999999"
+
 const footerLinks = {
   loja: [
-    { label: "Produtos", href: "/produtos" },
-    { label: "Como funciona", href: "/#como-funciona" },
-    { label: "Acompanhar pedido", href: "/pedido/acompanhar" },
+    { label: "Produtos", href: "/", external: false },
+    { label: "Como funciona", href: "/#como-funciona", external: false },
+    { label: "Acompanhar pedido", href: "/pedido/acompanhar", external: false },
   ],
   atendimento: [
-    { label: "Fale conosco", href: "/contato" },
-    { label: "WhatsApp", href: "#", external: true },
-    { label: "Instagram", href: "#", external: true },
+    { label: "Fale no WhatsApp", href: `https://wa.me/${WHATSAPP_NUMBER}`, external: true },
+    { label: "Minha conta", href: "/minha-conta", external: false },
   ],
 }
 
@@ -44,6 +45,9 @@ export function Footer() {
                   <Link
                     href={link.href}
                     className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary"
+                    {...(link.external
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
                   >
                     {link.label}
                   </Link>

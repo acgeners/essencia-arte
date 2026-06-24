@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Menu,
   X,
@@ -57,6 +58,8 @@ export function Header({ categories }: { categories: NavCategory[] }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isBestsellerOpen, setIsBestsellerOpen] = useState(false)
   const [firstName, setFirstName] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+  const router = useRouter()
   const { items, openCart } = useCartStore()
   const cartCount = items.length
   const cartTotal = items.reduce((sum, i) => sum + i.totalPrice, 0)
@@ -89,6 +92,14 @@ export function Header({ categories }: { categories: NavCategory[] }) {
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [])
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    const q = search.trim()
+    if (!q) return
+    setIsMobileMenuOpen(false)
+    router.push(`/busca?q=${encodeURIComponent(q)}`)
+  }
 
   return (
     <div className="sticky top-0 z-50 w-full">
@@ -127,14 +138,16 @@ export function Header({ categories }: { categories: NavCategory[] }) {
 
           {/* Search Bar - Desktop */}
           <div className="mx-8 hidden max-w-md flex-1 md:block">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
-                type="text"
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="O que você está procurando?"
                 className="h-10 w-full rounded-full border border-border bg-muted/50 pl-10 pr-4 text-sm transition-all focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-            </div>
+            </form>
           </div>
 
           {/* Actions */}
@@ -229,7 +242,7 @@ export function Header({ categories }: { categories: NavCategory[] }) {
                   isBestsellerOpen ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                Mais Vendidos
+                Coleções
                 <ChevronDown
                   className={cn("h-3 w-3 transition-transform duration-200", isBestsellerOpen && "rotate-180")}
                 />
@@ -292,14 +305,6 @@ export function Header({ categories }: { categories: NavCategory[] }) {
                 {cat.name}
               </Link>
             ))}
-
-            {/* Outlet */}
-            <Link
-              href="/pedido/novo"
-              className="text-[11px] font-semibold uppercase tracking-widest text-red-500 transition-all hover:text-red-400"
-            >
-              Outlet
-            </Link>
           </div>
         </div>
       </header>
@@ -309,14 +314,16 @@ export function Header({ categories }: { categories: NavCategory[] }) {
         <div className="fixed inset-0 top-[calc(16px+96px+48px)] z-50 bg-background md:hidden overflow-y-auto">
           <div className="px-4 py-6 space-y-8">
             {/* Mobile Search */}
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
-                type="text"
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="O que você está procurando?"
                 className="h-12 w-full rounded-lg border border-border bg-muted/50 pl-10 pr-4 text-base focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-            </div>
+            </form>
 
             {/* Mobile Categories */}
             <div className="space-y-1">
@@ -337,14 +344,6 @@ export function Header({ categories }: { categories: NavCategory[] }) {
                   </div>
                 </Link>
               ))}
-              <Link
-                href="/pedido/novo"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-[var(--radius-lg)] px-3 py-3 transition-colors hover:bg-muted"
-              >
-                <span className="text-xl">🏷️</span>
-                <p className="text-base font-semibold text-red-500">Outlet</p>
-              </Link>
             </div>
 
             <div className="border-t border-border pt-6 flex flex-col gap-4">

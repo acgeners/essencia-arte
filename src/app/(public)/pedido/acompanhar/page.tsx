@@ -3,7 +3,7 @@ import { OrderTracking } from "@/components/public/order-tracking"
 
 export const metadata: Metadata = {
   title: "Acompanhar Pedido | Essência & Arte",
-  description: "Acompanhe o status do seu pedido personalizado em tempo real.",
+  description: "Acompanhe o status do seu pedido personalizado pelo código.",
 }
 
 export default function OrderTrackingPage() {

@@ -1,69 +1,61 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Package, Clock, CheckCircle2, Truck, Star } from "lucide-react"
+import { Search, Package, Clock, CheckCircle2, Truck, Star, Heart, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ORDER_STATUS, type OrderStatus } from "@/lib/constants"
+import { trackOrder, type TrackedOrder } from "@/app/(public)/pedido/acompanhar/actions"
 
-// Status simulados (depois virão do banco de dados)
-const STATUS_STEPS = [
-  { id: "pending_payment", label: "Aguardando Pagamento", icon: Clock },
-  { id: "confirmed", label: "Pagamento Confirmado", icon: CheckCircle2 },
-  { id: "production", label: "Em Produção", icon: Star },
-  { id: "shipped", label: "Enviado / Pronto para Retirada", icon: Truck },
-  { id: "delivered", label: "Entregue", icon: Package },
+const STATUS_STEPS: { id: OrderStatus; icon: React.ElementType }[] = [
+  { id: "pending_payment", icon: Clock },
+  { id: "payment_confirmed", icon: CheckCircle2 },
+  { id: "in_production", icon: Star },
+  { id: "ready", icon: Package },
+  { id: "shipped", icon: Truck },
+  { id: "delivered", icon: Heart },
 ]
 
 export function OrderTracking() {
   const [orderCode, setOrderCode] = useState("")
   const [isSearching, setIsSearching] = useState(false)
-  const [searchedOrder, setSearchedOrder] = useState<null | any>(null)
+  const [order, setOrder] = useState<TrackedOrder | null>(null)
   const [error, setError] = useState("")
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!orderCode.trim()) {
+    const code = orderCode.trim()
+    if (!code) {
       setError("Por favor, digite o código do pedido")
       return
     }
-
     setError("")
+    setOrder(null)
     setIsSearching(true)
-
-    // Simular busca no banco de dados
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    setIsSearching(false)
-
-    // Mock: se o código for '123', mostrar pedido não encontrado. Senão, mostrar pedido mockado.
-    if (orderCode === "123") {
-      setSearchedOrder(null)
-      setError("Pedido não encontrado. Verifique o código e tente novamente.")
-    } else {
-      setSearchedOrder({
-        code: orderCode.toUpperCase(),
-        date: "26/04/2026",
-        productName: "Caneta Personalizada",
-        modelName: "Patinha de Cachorro",
-        total: 20.5,
-        currentStatus: "production", // Status atual no mock
-        history: [
-          { status: "pending_payment", date: "26/04/2026 14:30" },
-          { status: "confirmed", date: "26/04/2026 15:15" },
-          { status: "production", date: "27/04/2026 09:00" },
-        ],
-      })
+    try {
+      const result = await trackOrder(code)
+      if (!result) {
+        setError("Pedido não encontrado. Verifique o código e tente novamente.")
+      } else {
+        setOrder(result)
+      }
+    } catch {
+      setError("Não foi possível buscar o pedido agora. Tente novamente.")
+    } finally {
+      setIsSearching(false)
     }
   }
 
-  // Função para verificar se um passo já foi concluído ou é o atual
-  const getStepState = (stepId: string, currentStatusId: string) => {
-    const currentIndex = STATUS_STEPS.findIndex((s) => s.id === currentStatusId)
-    const stepIndex = STATUS_STEPS.findIndex((s) => s.id === stepId)
+  const formatDate = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+      : "—"
 
-    if (stepIndex < currentIndex) return "completed"
-    if (stepIndex === currentIndex) return "current"
-    return "pending"
-  }
+  const isCancelled = order?.status === "cancelled"
+  const currentIndex = order ? STATUS_STEPS.findIndex((s) => s.id === order.status) : -1
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8 sm:py-16">
@@ -88,7 +80,7 @@ export function OrderTracking() {
               <input
                 id="order-code"
                 type="text"
-                placeholder="Ex: PED-12345"
+                placeholder="Ex: PED-1A2B"
                 value={orderCode}
                 onChange={(e) => setOrderCode(e.target.value)}
                 className="flex h-12 w-full rounded-[var(--radius-md)] border border-input bg-background pl-10 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring uppercase"
@@ -106,94 +98,96 @@ export function OrderTracking() {
         </form>
       </div>
 
-      {/* Search Results */}
-      {searchedOrder && (
+      {/* Result */}
+      {order && (
         <div className="mt-8 overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-soft">
           {/* Order Header */}
           <div className="border-b border-border bg-muted/30 p-6 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
-                  Pedido #{searchedOrder.code}
+                  Pedido #{order.code}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Realizado em {searchedOrder.date}
+                  Realizado em {formatDate(order.createdAt)}
                 </p>
               </div>
               <div className="rounded-[var(--radius-md)] bg-primary/10 px-3 py-1.5">
-                <p className="text-sm font-semibold text-primary">
-                  {searchedOrder.productName} — {searchedOrder.modelName}
-                </p>
+                <p className="text-sm font-semibold text-primary">{order.productName}</p>
               </div>
             </div>
           </div>
 
-          {/* Timeline */}
           <div className="p-6 sm:p-8">
-            <h3 className="mb-6 font-display text-xl font-semibold text-foreground">
-              Status do Pedido
-            </h3>
-            
-            <div className="relative">
-              {/* Linha vertical que conecta os ícones */}
-              <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-border" />
-
-              <div className="space-y-8">
-                {STATUS_STEPS.map((step) => {
-                  const state = getStepState(step.id, searchedOrder.currentStatus)
-                  const isCompleted = state === "completed"
-                  const isCurrent = state === "current"
-                  const Icon = step.icon
-                  
-                  // Encontrar data se houver no histórico
-                  const historyItem = searchedOrder.history.find((h: any) => h.status === step.id)
-
-                  return (
-                    <div key={step.id} className="relative flex items-start gap-4">
-                      {/* Círculo com Ícone */}
-                      <div
-                        className={cn(
-                          "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                          isCompleted
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : isCurrent
-                            ? "border-primary bg-card text-primary"
-                            : "border-border bg-card text-muted-foreground"
-                        )}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-
-                      {/* Conteúdo */}
-                      <div className="flex flex-col pt-2">
-                        <span
-                          className={cn(
-                            "text-base font-medium",
-                            isCurrent || isCompleted
-                              ? "text-foreground"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          {step.label}
-                        </span>
-                        {historyItem && (
-                          <span className="mt-0.5 text-sm text-muted-foreground">
-                            {historyItem.date}
-                          </span>
-                        )}
-                        {isCurrent && (
-                          <p className="mt-2 text-sm text-primary">
-                            {step.id === "pending_payment" && "Aguardando o envio do comprovante pelo WhatsApp."}
-                            {step.id === "production" && "Sua peça está sendo feita à mão com muito amor!"}
-                            {step.id === "shipped" && "Seu pedido está a caminho ou pronto para ser retirado."}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+            {isCancelled ? (
+              <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-destructive/30 bg-destructive/5 p-4">
+                <XCircle className="h-6 w-6 shrink-0 text-destructive" />
+                <div>
+                  <p className="text-base font-semibold text-foreground">Pedido cancelado</p>
+                  <p className="text-sm text-muted-foreground">
+                    Em caso de dúvida, fale com a gente pelo WhatsApp.
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <h3 className="mb-6 font-display text-xl font-semibold text-foreground">
+                  Status do Pedido
+                </h3>
+                <div className="relative">
+                  {/* Linha vertical que conecta os ícones */}
+                  <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-border" />
+
+                  <div className="space-y-8">
+                    {STATUS_STEPS.map((step, i) => {
+                      const isCompleted = currentIndex >= 0 && i < currentIndex
+                      const isCurrent = i === currentIndex
+                      const Icon = step.icon
+
+                      return (
+                        <div key={step.id} className="relative flex items-start gap-4">
+                          <div
+                            className={cn(
+                              "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                              isCompleted
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : isCurrent
+                                  ? "border-primary bg-card text-primary"
+                                  : "border-border bg-card text-muted-foreground"
+                            )}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex flex-col pt-2">
+                            <span
+                              className={cn(
+                                "text-base font-medium",
+                                isCurrent || isCompleted ? "text-foreground" : "text-muted-foreground"
+                              )}
+                            >
+                              {ORDER_STATUS[step.id]}
+                            </span>
+                            {isCurrent && (
+                              <p className="mt-2 text-sm text-primary">
+                                {step.id === "pending_payment" &&
+                                  "Aguardando o pagamento da entrada via PIX."}
+                                {step.id === "in_production" &&
+                                  "Sua peça está sendo feita à mão com muito amor!"}
+                                {step.id === "shipped" &&
+                                  "Seu pedido está a caminho ou pronto para retirada."}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <p className="mt-6 text-xs text-muted-foreground">
+                  As atualizações de status são enviadas pelo WhatsApp.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -15,7 +15,6 @@ export interface PriceBreakdown {
 /** Resultado do cálculo de preço */
 export interface PriceCalculation {
   subtotal: number
-  packagingFee: number
   shippingFee: number
   total: number
   deposit: number

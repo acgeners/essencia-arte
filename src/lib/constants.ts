@@ -47,6 +47,9 @@ export const PAYMENT_PROOF_STATUS = {
 /** Taxa de entrada padrão (50%) */
 export const DEFAULT_DEPOSIT_RATE = 0.5
 
+/** Taxa fixa de personalização com nome (R$) */
+export const PERSONALIZATION_FEE = 2
+
 /** Limite de caracteres padrão para nome personalizado */
 export const DEFAULT_NAME_CHAR_LIMIT = 15
 

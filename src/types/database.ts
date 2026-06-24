@@ -610,6 +610,12 @@ export type Database = {
             }
             Returns: string
           }
+      cancel_order_restore_stock: {
+        Args: {
+          p_order_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

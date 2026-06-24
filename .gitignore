@@ -40,6 +40,10 @@ yarn-error.log*
 # supabase
 supabase/.temp/
 
+# scratch / backups (artefatos locais, não versionar)
+/scratch/
+/public/backups/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

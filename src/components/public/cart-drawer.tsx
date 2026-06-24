@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import type { CartView } from "@/stores/cart-store"
@@ -17,16 +17,19 @@ import {
   Phone,
   Mail,
   FileText,
+  QrCode,
+  IdCard,
+  Banknote,
 } from "lucide-react"
-import QRCode from "react-qr-code"
 import { useCartStore, type CartItem } from "@/stores/cart-store"
 import { useWizardStore } from "@/stores/wizard-store"
 import {
   createOrderAction,
+  createPixPayload,
   getCartProductImages,
   getCheckoutCustomerData,
 } from "@/app/(public)/pedido/confirmacao/actions"
-import { generatePixPayload } from "@/lib/pix"
+import QRCode from "react-qr-code"
 import { formatBRL } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
@@ -38,6 +41,7 @@ interface CustomerData {
   phone: string
   email: string
   notes: string
+  cpfCnpj: string
 }
 
 export function CartDrawer() {
@@ -48,6 +52,7 @@ export function CartDrawer() {
     phone: "",
     email: "",
     notes: "",
+    cpfCnpj: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -55,7 +60,9 @@ export function CartDrawer() {
   const [hasLoadedCustomerData, setHasLoadedCustomerData] = useState(false)
   const [productImages, setProductImages] = useState<Record<string, string | null>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [pixCopied, setPixCopied] = useState(false)
+  const [pixPayload, setPixPayload] = useState<string | null>(null)
+  const [chargedDeposit, setChargedDeposit] = useState(0)
+  const [copied, setCopied] = useState(false)
 
   // Reset to items view when drawer closes
   useEffect(() => {
@@ -122,11 +129,13 @@ export function CartDrawer() {
     if (!customerData.phone.trim()) newErrors.phone = "Telefone é obrigatório"
     else if (customerData.phone.replace(/\D/g, "").length < 10)
       newErrors.phone = "Telefone inválido"
-    if (
-      customerData.email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.email)
-    )
+    if (customerData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.email))
       newErrors.email = "E-mail inválido"
+    if (customerData.cpfCnpj) {
+      const cpf = customerData.cpfCnpj.replace(/\D/g, "")
+      if (cpf.length !== 11 && cpf.length !== 14)
+        newErrors.cpfCnpj = "CPF (11 dígitos) ou CNPJ (14 dígitos) inválido"
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -136,6 +145,7 @@ export function CartDrawer() {
     setIsSubmitting(true)
     setSubmitError(null)
 
+    let depositSum = 0
     for (const item of items) {
       const res = await createOrderAction(item.wizardState, customerData)
       if (!res.success) {
@@ -143,31 +153,22 @@ export function CartDrawer() {
         setIsSubmitting(false)
         return
       }
+      depositSum += res.deposit ?? 0
     }
+
+    // Um único QR PIX para o total da entrada (valor calculado no servidor)
+    const { payload } = await createPixPayload(depositSum)
+    setChargedDeposit(depositSum)
+    setPixPayload(payload)
 
     setIsSubmitting(false)
     setView("payment")
   }
 
-  const pixKey =
-    process.env.NEXT_PUBLIC_PIX_KEY ?? "email@essenciaearte.com.br"
-
-  const pixPayload = useMemo(
-    () =>
-      generatePixPayload({
-        key: pixKey,
-        merchantName: "Essencia e Arte",
-        merchantCity: "SAO PAULO",
-        amount: totalDeposit,
-        description: "Entrada pedidos EA",
-      }),
-    [pixKey, totalDeposit]
-  )
-
-  function handleCopyPix() {
-    navigator.clipboard.writeText(pixKey).then(() => {
-      setPixCopied(true)
-      setTimeout(() => setPixCopied(false), 2000)
+  function handleCopy(text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     })
   }
 
@@ -305,11 +306,10 @@ export function CartDrawer() {
               )}
               {view === "payment" && (
                 <PaymentView
-                  totalDeposit={totalDeposit}
+                  totalDeposit={chargedDeposit}
                   pixPayload={pixPayload}
-                  pixKey={pixKey}
-                  pixCopied={pixCopied}
-                  onCopyPix={handleCopyPix}
+                  copied={copied}
+                  onCopy={handleCopy}
                   onWhatsApp={handleWhatsApp}
                   onFinish={handleFinish}
                 />
@@ -549,6 +549,20 @@ function CheckoutView({
           error={errors.email}
           placeholder="seu@email.com"
         />
+        <DrawerFormField
+          id="cart-cpf"
+          label="CPF / CNPJ (opcional)"
+          icon={<IdCard className="h-4 w-4" />}
+          value={customerData.cpfCnpj}
+          onChange={(v) =>
+            setCustomerData((d) => ({
+              ...d,
+              cpfCnpj: v.replace(/\D/g, "").slice(0, 14),
+            }))
+          }
+          error={errors.cpfCnpj}
+          placeholder="Somente números"
+        />
         <div className="space-y-2">
           <label
             htmlFor="cart-notes"
@@ -564,10 +578,19 @@ function CheckoutView({
               setCustomerData((d) => ({ ...d, notes: e.target.value }))
             }
             placeholder="Alguma instrução especial?"
-            rows={3}
+            rows={2}
             className="flex w-full rounded-[var(--radius-md)] border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
+      </div>
+
+      {/* Pagamento */}
+      <div className="flex items-start gap-2 rounded-[var(--radius-md)] border border-border bg-primary/5 px-3 py-2.5">
+        <QrCode className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <p className="text-xs text-muted-foreground">
+          Pagamento via <span className="font-semibold text-foreground">PIX</span> — o QR Code
+          e o copia-e-cola da entrada (50%) aparecem na próxima etapa.
+        </p>
       </div>
 
       {submitError && (
@@ -601,17 +624,15 @@ function CheckoutView({
 function PaymentView({
   totalDeposit,
   pixPayload,
-  pixKey,
-  pixCopied,
-  onCopyPix,
+  copied,
+  onCopy,
   onWhatsApp,
   onFinish,
 }: {
   totalDeposit: number
-  pixPayload: string
-  pixKey: string
-  pixCopied: boolean
-  onCopyPix: () => void
+  pixPayload: string | null
+  copied: boolean
+  onCopy: (text: string) => void
   onWhatsApp: () => void
   onFinish: () => void
 }) {
@@ -623,70 +644,55 @@ function PaymentView({
           <Check className="h-7 w-7 text-success" />
         </div>
         <h3 className="mt-4 font-display text-xl font-semibold text-foreground">
-          Pedido(s) enviado(s)!
+          Pedido(s) criado(s)!
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Em breve entraremos em contato pelo WhatsApp.
+          Pague a entrada via PIX para confirmar.
         </p>
       </div>
 
       <Separator />
 
-      {/* PIX payment */}
-      <div className="rounded-[var(--radius-lg)] bg-primary/5 p-5">
-        <p className="text-sm font-semibold text-foreground">
-          📱 Próximo passo: pague a entrada via Pix
-        </p>
-
-        <div className="mt-4 flex flex-col items-center gap-4">
-          <div className="rounded-[var(--radius-lg)] border border-border bg-white p-3 shadow-soft">
-            <QRCode
-              value={pixPayload}
-              size={150}
-              level="M"
-              bgColor="#ffffff"
-              fgColor="#000000"
-            />
+      {/* Payment info */}
+      <div className="rounded-[var(--radius-lg)] bg-primary/5 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Banknote className="h-4 w-4 text-primary" />
+            Entrada total (50%)
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Escaneie com seu app bancário
-          </p>
+          <span className="text-lg font-bold text-primary">{formatBRL(totalDeposit)}</span>
         </div>
 
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Valor da entrada (50%)</span>
-            <span className="text-lg font-bold text-primary">
-              {formatBRL(totalDeposit)}
-            </span>
-          </div>
-          <Separator />
-          <div>
-            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Ou copie a chave Pix
-            </p>
-            <div className="flex items-center justify-between rounded-[var(--radius-md)] border border-border bg-card px-3 py-2.5">
-              <code className="break-all text-sm font-medium text-foreground">
-                {pixKey}
+        {pixPayload ? (
+          <div className="space-y-3">
+            <div className="flex justify-center">
+              <div className="rounded-[var(--radius-md)] border border-border bg-white p-3">
+                <QRCode value={pixPayload} size={148} />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-border bg-card px-3 py-2">
+              <code className="flex-1 break-all text-xs font-medium text-foreground line-clamp-2">
+                {pixPayload}
               </code>
               <button
                 type="button"
-                onClick={onCopyPix}
-                className="ml-2 shrink-0 rounded-[var(--radius-sm)] p-1 text-muted-foreground hover:text-foreground"
-                title="Copiar chave Pix"
+                onClick={() => onCopy(pixPayload)}
+                className="shrink-0 p-1 text-muted-foreground hover:text-foreground"
+                title="Copiar código PIX"
               >
-                {pixCopied ? (
-                  <Check className="h-4 w-4 text-success" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
+                {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
               </button>
             </div>
-            {pixCopied && (
-              <p className="mt-1 text-xs text-success">Chave copiada!</p>
-            )}
+            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <QrCode className="h-3.5 w-3.5 shrink-0" />
+              Escaneie o QR Code ou use o copia-e-cola no app do seu banco.
+            </p>
           </div>
-        </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Combine o pagamento da entrada via WhatsApp e envie o comprovante.
+          </p>
+        )}
       </div>
 
       {/* Actions */}
@@ -697,7 +703,7 @@ function PaymentView({
           className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-[#25D366] px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#1da851]"
         >
           <MessageCircle className="h-4 w-4" />
-          Enviar comprovante pelo WhatsApp
+          Enviar comprovante no WhatsApp
         </button>
         <button
           type="button"

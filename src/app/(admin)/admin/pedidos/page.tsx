@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { StatusBadge } from "@/components/ui/status-badge"
-import type { OrderStatus } from "@/lib/constants"
+import { ORDER_STATUS, type OrderStatus } from "@/lib/constants"
 import { Search, ChevronRight } from "lucide-react"
 
 export const metadata = {
@@ -38,9 +38,11 @@ export default async function AdminOrdersPage() {
           <div className="flex gap-2">
             <select className="h-10 w-full rounded-[var(--radius-md)] border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto">
               <option value="all">Todos os status</option>
-              <option value="pending_payment">Aguardando Pagamento</option>
-              <option value="confirmed">Confirmado</option>
-              <option value="production">Em Produção</option>
+              {Object.entries(ORDER_STATUS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
         </div>

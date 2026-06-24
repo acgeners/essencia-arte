@@ -81,7 +81,7 @@ export default async function HomePage() {
       </section>
 
       {/* 3. Como funciona + brand story */}
-      <section className="bg-muted/30 py-20 md:py-28">
+      <section id="como-funciona" className="scroll-mt-36 bg-muted/30 py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-16 lg:grid-cols-2 lg:gap-24 lg:items-start">
 
@@ -100,18 +100,18 @@ export default async function HomePage() {
               </p>
               <div className="mt-8 flex items-center gap-6">
                 <div className="text-center">
-                  <p className="font-display text-3xl font-bold text-primary">+500</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Clientes</p>
-                </div>
-                <div className="h-10 w-px bg-border" />
-                <div className="text-center">
                   <p className="font-display text-3xl font-bold text-primary">100%</p>
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">Artesanal</p>
                 </div>
                 <div className="h-10 w-px bg-border" />
                 <div className="text-center">
-                  <p className="font-display text-3xl font-bold text-primary">5★</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Avaliação</p>
+                  <p className="font-display text-3xl font-bold text-primary">À mão</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Cada peça</p>
+                </div>
+                <div className="h-10 w-px bg-border" />
+                <div className="text-center">
+                  <p className="font-display text-3xl font-bold text-primary">Único</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Cada pedido</p>
                 </div>
               </div>
             </div>

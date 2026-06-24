@@ -74,7 +74,7 @@ export function Testimonials() {
             O que nossos clientes dizem
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Cada peça carrega uma história. Veja o que quem já comprou tem a contar.
+            Histórias que inspiram cada peça que criamos.
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export function Testimonials() {
 
               {/* Review text */}
               <p className="flex-1 text-sm leading-relaxed text-muted-foreground">
-                "{t.text}"
+                &ldquo;{t.text}&rdquo;
               </p>
 
               {/* Divider */}
@@ -109,17 +109,10 @@ export function Testimonials() {
           ))}
         </div>
 
-        {/* Aggregate note */}
-        <div className="mt-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-            ))}
-          </div>
-          <span>
-            <strong className="text-foreground">5,0</strong> de 5 — baseado em avaliações de clientes reais
-          </span>
-        </div>
+        {/* Illustrative disclaimer */}
+        <p className="mt-10 text-center text-xs text-muted-foreground">
+          Depoimentos ilustrativos. Em breve, avaliações reais de clientes.
+        </p>
       </div>
     </section>
   )

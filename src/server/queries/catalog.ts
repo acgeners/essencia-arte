@@ -56,6 +56,29 @@ export const getProductsByCategory = cache(async (categorySlug: string) => {
 })
 
 /**
+ * Busca produtos por nome (para a busca do header).
+ */
+export const searchProducts = cache(async (query: string) => {
+  const term = query.trim()
+  if (!term) return []
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, base_price, images, categories!products_category_id_fkey(slug)")
+    .ilike("name", `%${term}%`)
+    .order("name")
+
+  if (error) throw error
+  return ((data ?? []) as CatalogProductRow[]).map((p) => ({
+    id: p.id,
+    name: p.name,
+    basePrice: p.base_price,
+    images: p.images ?? [],
+    categorySlug: p.categories?.slug ?? "",
+  }))
+})
+
+/**
  * Busca todas as opções ativas de um determinado tipo.
  */
 export const getOptionsByType = cache(async (type: string) => {

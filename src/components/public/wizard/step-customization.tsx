@@ -5,7 +5,8 @@ import { useCatalog } from "@/components/public/wizard/catalog-context"
 import { ColorSwatchGroup } from "@/components/ui/color-swatch"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown } from "lucide-react"
-import { DEFAULT_NAME_CHAR_LIMIT } from "@/lib/constants"
+import { DEFAULT_NAME_CHAR_LIMIT, PERSONALIZATION_FEE } from "@/lib/constants"
+import { formatBRL } from "@/lib/format"
 import { AlertTriangle } from "lucide-react"
 
 export function StepCustomization() {
@@ -124,7 +125,7 @@ export function StepCustomization() {
       <section>
         <ToggleSection
           label="Nome personalizado"
-          description="+R$ 2,00 — escreva o nome desejado"
+          description={`+${formatBRL(PERSONALIZATION_FEE)} — escreva o nome desejado`}
           enabled={personalization.enabled}
           onToggle={(v) => setPersonalization({ enabled: v, name: v ? personalization.name : "" })}
         >

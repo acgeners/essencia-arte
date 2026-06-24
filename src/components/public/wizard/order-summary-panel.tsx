@@ -2,6 +2,7 @@
 
 import type { PriceCalculation } from "@/types/domain"
 import { formatBRL } from "@/lib/format"
+import { PERSONALIZATION_FEE } from "@/lib/constants"
 import { Separator } from "@/components/ui/separator"
 import { Heart, Calendar, Package } from "lucide-react"
 import { useCatalog } from "@/components/public/wizard/catalog-context"
@@ -35,9 +36,6 @@ export function OrderSummaryPanel({ pricing, deadlines }: OrderSummaryPanelProps
     : null
   const tassel = state.glitter.tasselColorId
     ? catalog.tasselColors.find((item) => item.id === state.glitter.tasselColorId)
-    : null
-  const packaging = state.packaging.optionId
-    ? catalog.packagingOptions.find((item) => item.id === state.packaging.optionId)
     : null
   const shipping = state.delivery.shippingOptionId
     ? catalog.shippingOptions.find((item) => item.id === state.delivery.shippingOptionId)
@@ -86,7 +84,7 @@ export function OrderSummaryPanel({ pricing, deadlines }: OrderSummaryPanelProps
     rows.push({
       label: "Nome personalizado",
       detail: state.personalization.name,
-      value: 2,
+      value: PERSONALIZATION_FEE,
     })
   }
   for (const extraId of state.extras) {
@@ -94,14 +92,6 @@ export function OrderSummaryPanel({ pricing, deadlines }: OrderSummaryPanelProps
     if (extra) {
       rows.push({ label: "Adicional", detail: extra.name, value: extra.price })
     }
-  }
-  if (packaging) {
-    rows.push({
-      label: "Embalagem",
-      detail: packaging.name,
-      value: packaging.price ?? 0,
-      included: (packaging.price ?? 0) === 0,
-    })
   }
   if (shipping) {
     rows.push({

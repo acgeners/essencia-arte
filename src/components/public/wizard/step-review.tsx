@@ -12,7 +12,7 @@ const TRUST_ITEMS = [
   { icon: Heart, label: "Feito", strong: "com amor" },
   { icon: Sparkles, label: "Personalizado", strong: "do seu jeito" },
   { icon: Award, label: "Materiais", strong: "de qualidade" },
-  { icon: Gift, label: "Embalagem", strong: "para encantar" },
+  { icon: Gift, label: "Pronto", strong: "para presentear" },
 ]
 
 export function StepReview() {
@@ -38,10 +38,6 @@ export function StepReview() {
   const extras = state.extras
     .map((id) => catalog.extras.find((e) => e.id === id)?.name)
     .filter(Boolean) as string[]
-  const packagingName =
-    state.packaging.type === "gift"
-      ? catalog.packagingOptions.find((p) => p.id === state.packaging.optionId)?.name ?? "Para presente"
-      : "Embalagem padrão"
   const shippingName =
     catalog.shippingOptions.find((s) => s.id === state.delivery.shippingOptionId)?.name ?? "—"
 
@@ -52,7 +48,6 @@ export function StepReview() {
     },
     { label: "Cores e detalhes escolhidos", ok: !!state.colors.primaryId },
     { label: "Tipo de entrega", ok: !!state.delivery.type },
-    { label: "Embalagem para presente", ok: true },
     { label: "Valor total", ok: pricing.total > 0 },
   ]
 
@@ -116,7 +111,6 @@ export function StepReview() {
                 <FichaRow label="Nome" value={state.personalization.name} />
               )}
               {extras.length > 0 && <FichaRow label="Adicionais" value={extras.join(", ")} />}
-              <FichaRow label="Embalagem" value={packagingName} />
             </dl>
           </div>
           <p className="mt-3 text-[10px] italic text-muted-foreground">

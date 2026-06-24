@@ -78,22 +78,26 @@ export async function createOrderAction(
 
     // 2. Lógica de Autenticação Silenciosa
     if (customerData.email) {
-      // Tentar encontrar usuário existente por e-mail
-      const { data: existingUsers } = await admin.auth.admin.listUsers()
-      const user = existingUsers?.users.find(u => u.email === customerData.email)
+      // Buscar cliente existente direto na tabela espelho (email é UNIQUE) —
+      // evita listUsers() paginado, que só varria os primeiros ~50 usuários
+      const { data: existingCustomer } = await admin
+        .from("customers")
+        .select("id")
+        .eq("email", customerData.email)
+        .maybeSingle()
 
-      if (user) {
-        customerId = user.id
+      if (existingCustomer) {
+        customerId = existingCustomer.id
       } else {
-        // Criar novo usuário silenciosamente
+        // Criar novo usuário silenciosamente (a trigger handle_new_user popula customers)
         const { data: newUser } = await admin.auth.admin.createUser({
           email: customerData.email,
           password: Math.random().toString(36).slice(-12), // Senha aleatória
           email_confirm: true, // Auto-confirmar
           user_metadata: {
             full_name: customerData.name,
-            phone: customerData.phone
-          }
+            phone: customerData.phone,
+          },
         })
 
         if (newUser?.user) {
@@ -130,7 +134,7 @@ export async function createOrderAction(
       p_secondary_color_id: state.colors.secondaryEnabled ? state.colors.secondaryId : null,
       p_glitter_id: state.glitter.enabled ? state.glitter.glitterId : null,
       p_tassel_color_id: state.glitter.enabled ? state.glitter.tasselColorId : null,
-      p_packaging_id: state.packaging.optionId || null,
+      p_packaging_id: null,
       p_shipping_id: state.delivery.shippingOptionId || null,
       p_item_price: pricing.subtotal,
       p_extras: extras,

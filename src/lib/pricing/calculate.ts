@@ -1,6 +1,6 @@
 import type { WizardState } from "@/stores/wizard-store"
 import type { PriceCalculation } from "@/types/domain"
-import { DEFAULT_DEPOSIT_RATE } from "@/lib/constants"
+import { DEFAULT_DEPOSIT_RATE, PERSONALIZATION_FEE } from "@/lib/constants"
 import type { FullCatalog } from "@/server/queries/catalog"
 
 
@@ -23,8 +23,7 @@ export function calculatePrice(state: WizardState, catalog: FullCatalog): PriceC
   // 2. Personalização (nome)
   let personalizationFee = 0
   if (state.personalization.enabled && state.personalization.name.length > 0) {
-    //TODO: mover personalizationPrice para DB ou configs. Por enquanto hardcoded 2.0
-    personalizationFee = 2.0 
+    personalizationFee = PERSONALIZATION_FEE
     breakdown.push({ label: "Nome personalizado", value: personalizationFee })
   }
 
@@ -51,21 +50,7 @@ export function calculatePrice(state: WizardState, catalog: FullCatalog): PriceC
     }
   }
 
-  // 6. Embalagem
-  let packagingFee = 0
-  if (state.packaging.optionId) {
-    const pkg = catalog.packagingOptions.find(
-      (p) => p.id === state.packaging.optionId
-    )
-    if (pkg) {
-      packagingFee = pkg.price ?? 0
-      if ((pkg.price ?? 0) > 0) {
-        breakdown.push({ label: pkg.name, value: pkg.price ?? 0 })
-      }
-    }
-  }
-
-  // 7. Frete
+  // 6. Frete
   let shippingFee = 0
   if (state.delivery.shippingOptionId) {
     const ship = catalog.shippingOptions.find(
@@ -88,13 +73,12 @@ export function calculatePrice(state: WizardState, catalog: FullCatalog): PriceC
   }
 
   const subtotal = basePrice + personalizationFee + extrasTotal
-  const total = subtotal + packagingFee + shippingFee
+  const total = subtotal + shippingFee
   const deposit = Math.ceil(total * DEFAULT_DEPOSIT_RATE * 100) / 100
   const balance = Math.round((total - deposit) * 100) / 100
 
   return {
     subtotal,
-    packagingFee,
     shippingFee,
     total,
     deposit,
